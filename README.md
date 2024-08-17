@@ -10,3 +10,10 @@
 ```bash
 python deeplxfile.py
 ```
+
+## 版本说明
+现已完全支持Word，Excel
+powerpoint 支持翻译大部分内容
+
+运行项目后会在目录下生成config.json
+设置`save_original`为`true`即可保留原文

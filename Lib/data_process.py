@@ -21,6 +21,7 @@ for 第i行，总共m行
 import httpx
 import json
 import os
+import time
 output_dir = './out'
 os.makedirs(output_dir, exist_ok=True)
 
@@ -56,8 +57,10 @@ def process_file(file_path, source_lang, target_lang):
         strings_array.append('\n'.join(current_string))
     alternative_index = 0  # 用于命名 alternatives 文件
     with open('./out/translated_result.txt', 'w', encoding='utf-8') as result_file:
+        process_block_count = 1
         for s in strings_array:
-            print(f"正在处理...\n{s}")
+            print(f"正在处理第{process_block_count}个块...")
+            process_block_count = process_block_count + 1
             json_array = str(s)
             data = {
                 "text": s,
@@ -65,23 +68,49 @@ def process_file(file_path, source_lang, target_lang):
                 "target_lang": target_lang
             }
             post_data = json.dumps(data)
-            try:
-                # 发送POST请求并打印结果
-                r = httpx.post(url=deeplx_api, data=post_data)
-                response_data = r.json()
 
-                # 保存 data 内容到 translated_result.txt
-                result_file.write(response_data['data'] + '\n')
-                print(f"收到数据{response_data}")
+            retry_count = 0
+            max_retries = 5
+            success = False
+            while retry_count < max_retries:
+                try:
+                    # 发送POST请求并打印结果
+                    r = httpx.post(url=deeplx_api, data=post_data)
+                    response_data = r.json()
 
-                # 如果存在 alternatives，保存每个替代到不同的文件
-                if "alternatives" in response_data and response_data["alternatives"] is not None :
-                    alternatives = response_data["alternatives"]
-                    print(alternatives)
-                    for alternative in alternatives:
-                        with open(f'./out/alternatives({alternative_index}).txt', 'w', encoding='utf-8') as alt_file:
-                            alt_file.write(alternative + '\n')
-                        alternative_index += 1
+                    # 检查 'data' 是否存在
+                    if 'data' in response_data:
+                        # 保存 data 内容到 translated_result.txt
+                        result_file.write(response_data['data'] + '\n')
+                        success = True
+                        #print(f"收到数据 {response_data}")
 
-            except httpx.RequestError as exc:
-                print(f"An error occurred while requesting {exc.request.url!r}.")
+                        # 如果存在 alternatives，保存每个替代到不同的文件
+                        if "alternatives" in response_data and response_data["alternatives"] is not None:
+                            alternatives = response_data["alternatives"]
+                            print(alternatives)
+                            for alternative in alternatives:
+                                with open(f'./out/alternatives({alternative_index}).txt', 'w', encoding='utf-8') as alt_file:
+                                    alt_file.write(alternative + '\n')
+                                alternative_index += 1
+                        break  # 成功处理后退出重试循环
+
+                    else:
+                        raise ValueError("未找到返回数据，可能是因为请求过于频繁")
+                
+                except (httpx.RequestError, ValueError) as exc:
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        print(f"Error occurred: {exc}. Retrying in 2 seconds... ({retry_count}/{max_retries})")
+                        time.sleep(2)
+                    else:
+                        print(f"Failed after {max_retries} retries. Moving on to the next string.")
+            
+            if not success:
+                error_lines = s.splitlines()
+                error_messages = [f"Error: {error_line}" for error_line in error_lines]
+                error_message = "\n".join(error_messages) + "\n"
+                result_file.write(error_message)
+                print(f"Failed after {max_retries} retries. Moving on to the next string.")
+
+
