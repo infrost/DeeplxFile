@@ -3,6 +3,7 @@ import subprocess
 import sys
 import os
 import time
+import requests
 from Lib import compose, data_process, extract, direct_mode
 from Lib.config import config
 
@@ -97,11 +98,36 @@ def loop():
         print(f"DeeplxFile V0.2.0 by Kevin, 项目地址https://github.com/infrost/deeplxfile")
         input("Enter键继续翻译...")
 
+def check_update():
+    current_ver = config.get("version")
+    version_url = "https://raw.githubusercontent.com/infrost/DeeplxFile/master/config.json"
+    try:
+        response = requests.get(version_url)
+        response.raise_for_status()  # 检查请求是否成功
+
+        data = response.json()
+        online_ver = data.get("version")
+
+        if online_ver:
+            if online_ver != current_ver:
+                print(f"DeeplxFile当前版本V: {current_ver}, 有新版本可用: V{online_ver}\n请前往下载https://github.com/infrost/DeeplxFile/releases/")
+            else:
+                print(f"DeeplxFile已是最新版本: V{current_ver}")
+        else:
+            print("未找到可更新版本信息")
+
+    except requests.exceptions.RequestException as e:
+        print(f"版本更新检查出错 ，请检查网络{e}")
+    except ValueError as e:
+        print(f"版本检查：未知错误 {e}")
+
 
 def main():
+    check_update()
+    time.sleep(1)
     # 创建并启动线程
     if config.get("direct_mode", False):
-        print("使用直连模式请求deepl的翻译返回，不使用deeplx引擎，如果频繁请求可能会遇到错误\n该模式只能翻译较小的文件，大文件请使用deeplx引擎\n在config.json中direct_mode项设置是否直连")
+        print("\n【直连模式】\n当前使用直连模式请求deepl的翻译返回，不使用deeplx引擎，如果频繁请求可能会遇到错误\n该模式只能翻译较小的文件，大文件请使用deeplx引擎\n在config.json中direct_mode项设置是否直连\n")
     else:
         deeplx_thread = threading.Thread(target=run_deeplx)
         deeplx_thread.start()
