@@ -2,7 +2,7 @@ import os
 import zipfile
 from lxml import etree as ET
 import tempfile
-from Lib.config import config
+
 
 def read_strings_from_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:

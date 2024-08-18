@@ -1,32 +1,9 @@
-"""
-打开目录下text_extracted.txt
-该txt格式如下：
-hello word
-word 0
-openai
-gpt
-（每条string一行）
-
-for 第i行，总共m行
-统计词数 = 0
-统计每行的词数（可以以空格区分，n个空格就是n+1个词）
-统计词数 += i行词数
-如果第i行词数>500，
-截断，从1-i行生成第一个string（array）
-打印
-继续上面操作，直至生成完所有string（array）
-
-
-"""
-import httpx
-import json
-import os
+import requests
 import time
-from Lib.config import config
+import os
 output_dir = './out'
 os.makedirs(output_dir, exist_ok=True)
 
-deeplx_api = "http://127.0.0.1:1188/translate"
 def count_words(line):
     # 统计一行中的词数，以空格分隔
     return len(line.split())
@@ -57,62 +34,72 @@ def process_file(file_path, source_lang, target_lang):
     if current_string:
         strings_array.append('\n'.join(current_string))
     alternative_index = 0  # 用于命名 alternatives 文件
+    #source_lang = "EN"
     with open('./out/translated_result.txt', 'w', encoding='utf-8') as result_file:
         process_block_count = 1
         for s in strings_array:
             print(f"正在处理第{process_block_count}个块...")
             process_block_count = process_block_count + 1
-            json_array = str(s)
-            data = {
-                "text": s,
-                "source_lang": source_lang,
-                "target_lang": target_lang
+            s_lines = s.splitlines()  # 将多行字符串分割成行列表
+            payload_texts = [{"text": f"{idx}: {line}", "requestAlternatives": 0, "source_lang": source_lang} 
+                            for idx, line in enumerate(s_lines)]
+            #print(payload_texts)
+            ## 构造请求头
+            url = "https://www2.deepl.com/jsonrpc"
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0"
             }
-            post_data = json.dumps(data)
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "LMT_handle_texts",
+                "params": {
+                    "texts": payload_texts,
+                    "lang": {
+                        "source_lang": source_lang,  # 指定源语言
+                        "target_lang": target_lang
+                    },
+                    "priority": 1,
+                    "commonJobParams": {},
+                    "timestamp": int(time.time() * 1000)
+                }
+            }
 
+
+            max_retries = 5
             retry_count = 0
-            max_retries = 6
             success = False
-            while retry_count < max_retries:
-                
+
+            while retry_count < max_retries and not success:
                 try:
-                    # 发送POST请求并打印结果
-                    r = httpx.post(url=deeplx_api, data=post_data)
-                    response_data = r.json()
+                    response = requests.post(url, json=payload, headers=headers, timeout=30)
+                    print("正在等待返回结果")
+                    if response.status_code == 200:
+                        result_origin = response.json()
+                        #print(f"收到返回值\n{result_origin}\n")
 
-                    # 检查 'data' 是否存在
-                    if 'data' in response_data:
-                        # 保存 data 内容到 translated_result.txt
-                        result_file.write(response_data['data'] + '\n')
+                        # 处理所有结果并去掉 index
+                        for item in result_origin['result']['texts']:
+                            # 去掉前面的 index（假设格式始终是 "index: 内容"）
+                            text = item['text'].split(": ", 1)[-1]  # 只保留冒号后面的内容
+                            result_file.write(text + '\n')
+
                         success = True
-                        #print(f"收到数据 {response_data}")
-
-                        # 如果存在 alternatives，保存每个替代到不同的文件
-                        if "alternatives" in response_data and response_data["alternatives"] is not None:
-                            alternatives = response_data["alternatives"]
-                            print(alternatives)
-                            for alternative in alternatives:
-                                with open(f'./out/alternatives({alternative_index}).txt', 'w', encoding='utf-8') as alt_file:
-                                    alt_file.write(alternative + '\n')
-                                alternative_index += 1
-                        break  # 成功处理后退出重试循环
 
                     else:
                         raise ValueError("未找到返回数据，可能是因为请求过于频繁，程序将会尝试重试")
-                
-                except (httpx.RequestError, ValueError) as exc:
+
+                except (requests.exceptions.RequestException, ValueError) as exc:
                     retry_count += 1
                     if retry_count < max_retries:
                         print(f"Error occurred: {exc}. Retrying in 10 seconds... ({retry_count}/{max_retries})")
                         time.sleep(10)
                     else:
                         print(f"Failed after {max_retries} retries. Moving on to the next string.")
-            
+
             if not success:
                 error_lines = s.splitlines()
                 error_messages = [f"Error: {error_line}" for error_line in error_lines]
                 error_message = "\n".join(error_messages) + "\n"
                 result_file.write(error_message)
                 print(f"Failed after {max_retries} retries. Moving on to the next string.")
-
-
