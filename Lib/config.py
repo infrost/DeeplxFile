@@ -4,9 +4,10 @@ import json
 # 定义默认配置
 default_config = {
     "save_original": False, #保留原文件值
-    "version": "0.1.1",
+    "version": "0.2.3",
     "dev": False,
-    "direct_mode": False
+    "direct_mode": False,
+    "i18n": "ZH"
 }
 
 # 定义配置文件的路径

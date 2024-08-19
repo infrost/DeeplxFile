@@ -41,8 +41,8 @@ def process_file(file_path, source_lang, target_lang):
             print(f"正在处理第{process_block_count}个块...")
             process_block_count = process_block_count + 1
             s_lines = s.splitlines()  # 将多行字符串分割成行列表
-            payload_texts = [{"text": f"{idx}: {line}", "requestAlternatives": 0, "source_lang": source_lang} 
-                            for idx, line in enumerate(s_lines)]
+            payload_texts = [{"text": line, "requestAlternatives": 0, "source_lang": source_lang} 
+                            for line in enumerate(s_lines)]
             #print(payload_texts)
             ## 构造请求头
             url = "https://www2.deepl.com/jsonrpc"
@@ -81,7 +81,7 @@ def process_file(file_path, source_lang, target_lang):
                         # 处理所有结果并去掉 index
                         for item in result_origin['result']['texts']:
                             # 去掉前面的 index（假设格式始终是 "index: 内容"）
-                            text = item['text'].split(": ", 1)[-1]  # 只保留冒号后面的内容
+                            text = item['text'] 
                             result_file.write(text + '\n')
 
                         success = True

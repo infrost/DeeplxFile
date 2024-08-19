@@ -70,17 +70,9 @@ def loop():
             continue
 
         print("等待选择文件...")
-        try:
-            # 创建解压线程
-            extract_thread = threading.Thread(target=extract.extract_file)
-            extract_thread.start()
-            extract_thread.join()
-        except Exception as e:
-            # 如果线程启动失败，捕获异常并将direct_mode设置为True
-            print(f"Deeplx引擎异常，尝试使用直连模式 {e}")
-            config['direct_mode'] = True
-            save_config(config)
-            print("已将direct_mode设置为True")
+
+        # 解压
+        extract.extract_file()
         if extract.process_cancelled:
             print ("文件导入取消")
             continue
@@ -95,7 +87,7 @@ def loop():
         compose.compose_file(extract.file_type, extract.input_path)
 
         print("更新完成！已在输入的相同目录下生成文件")
-        print(f"DeeplxFile V0.2.0 by Kevin, 项目地址https://github.com/infrost/deeplxfile")
+        print(f"DeeplxFile by Kevin, 项目地址https://github.com/infrost/deeplxfile")
         input("Enter键继续翻译...")
 
 def check_update():
@@ -129,9 +121,16 @@ def main():
     if config.get("direct_mode", False):
         print("\n【直连模式】\n当前使用直连模式请求deepl的翻译返回，不使用deeplx引擎，如果频繁请求可能会遇到错误\n该模式只能翻译较小的文件，大文件请使用deeplx引擎\n在config.json中direct_mode项设置是否直连\n")
     else:
-        deeplx_thread = threading.Thread(target=run_deeplx)
-        deeplx_thread.start()
-        print("正在启动deeplx引擎")
+        try: 
+            deeplx_thread = threading.Thread(target=run_deeplx)
+            deeplx_thread.start()
+            print("正在启动deeplx引擎")
+        except Exception as e:
+            # 如果线程启动失败，捕获异常并将direct_mode设置为True
+            print(f"Deeplx引擎异常，尝试使用直连模式 {e}")
+            config['direct_mode'] = True
+            save_config(config)
+            print("已将direct_mode设置为True")
     # 给 deeplx 一些时间来启动
     time.sleep(1)
     loop()

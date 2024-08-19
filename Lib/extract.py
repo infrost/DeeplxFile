@@ -119,7 +119,7 @@ def extract_file():
     file_path = filedialog.askopenfilename(
         title='选择一个文件，目前支持了Excel,Word,PowerPoint', 
         filetypes=[
-            ('Excel, PowerPoint, Word', '*.xlsx; *.pptx; *.docx'),
+            ('Excel, PowerPoint, Word', '*.xlsx *.pptx *.docx'),
             ('All Files', '*.*')
             ]
         )

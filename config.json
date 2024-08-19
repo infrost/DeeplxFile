@@ -1,6 +1,7 @@
 {
     "save_original": false,
-    "version": "0.2.2",
+    "version": "0.2.3",
     "dev": false,
-    "direct_mode": true
+    "direct_mode": false,
+    "i18n": "ZH"
 }
