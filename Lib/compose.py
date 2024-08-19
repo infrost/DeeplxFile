@@ -2,6 +2,7 @@ import os
 import zipfile
 from lxml import etree as ET
 import tempfile
+from Lib.config import config
 
 
 def read_strings_from_file(file_path):
@@ -21,38 +22,47 @@ def update_shared_strings_in_xlsx(file_path, strings):
             print("sharedStrings.xml 文件不存在。")
             return
         
-        # 解析 XML 文件，保留原始格式
-        #parser = ET.XMLParser(remove_blank_text=True, recover=True)
-        tree = ET.parse(shared_strings_path)
+        # 解析 XML 文件
+        parser = ET.XMLParser(remove_blank_text=False)
+        tree = ET.parse(shared_strings_path, parser)
         root = tree.getroot()
-        
-        # 查找所有 <t> 标签
+
         t_elements = list(root.iter('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t'))
-        
-        # 确保提供的字符串数量与 <t> 标签数量匹配
+
         if len(strings) != len(t_elements):
             print(f"警告: 提供的字符串数量 ({len(strings)}) 与现有 <t> 标签数量 ({len(t_elements)}) 不匹配。")
         else:
             print("已匹配所有标签")
-        
-        # 按顺序替换 <t> 标签中的文本
+
         for t_element, new_string in zip(t_elements, strings):
-            if config.get("save_original", False):  # 检查 config["save_original"] 的值
-                t_element.text = t_element.text + new_string if t_element.text else new_string
+            original_text = t_element.text
+            if original_text is not None and '\n' in original_text:
+                new_string = new_string.replace(' ', '')
+                lines = original_text.splitlines()
+                if config.get("save_original", False):
+                    t_element.text = lines[0] + new_string
+                    if len(lines) > 1:
+                        t_element.text += '\n' + '\n'.join(lines[1:])
+                else:
+                    t_element.text = new_string
+                    if len(lines) > 1:
+                        t_element.text += '\n' + '\n'.join(lines[1:])
             else:
-                t_element.text = new_string
+                if config.get("save_original", False):
+                    t_element.text = (original_text or '') + new_string
+                else:
+                    t_element.text = new_string
 
-        # 将修改后的 XML 写回文件，不改变格式
-        with open(shared_strings_path, 'wb') as f:
-            tree.write(f, xml_declaration=True, encoding='UTF-8', pretty_print=False)
-
-        # 将修改后的文件压缩回 .xlsx
-        new_xlsx_path = file_path.replace('.xlsx', '_translated.xlsx')
+        # 将修改后的 XML 文件写回
+        tree.write(shared_strings_path, xml_declaration=True, encoding='UTF-8', pretty_print=False, standalone=True)
         
+        new_xlsx_path = file_path.replace('.xlsx', '_translated.xlsx')
+
         # 如果文件已存在，则删除
         if os.path.exists(new_xlsx_path):
             os.remove(new_xlsx_path)
-        
+
+        # 将修改后的文件压缩回 .xlsx
         with zipfile.ZipFile(new_xlsx_path, 'w') as zip_ref:
             for foldername, subfolders, filenames in os.walk(tmpdirname):
                 for filename in filenames:
