@@ -4,7 +4,7 @@ import sys
 import os
 import time
 import requests
-from Lib import compose, data_process, extract, direct_mode
+from Lib import compose, data_process, extract, direct_mode, playwright_process
 from Lib.config import config
 
 # 定义线程任务，执行 deeplx_windows_amd64.exe
@@ -75,10 +75,13 @@ def loop():
         extract.extract_file()
         if extract.process_cancelled:
             print ("文件导入取消")
+            extract.process_cancelled = False
             continue
         print("完成解压")
         if config.get("direct_mode", False):
             direct_mode.process_file('./tmp/text_extracted.txt', source_lang, target_lang)
+        elif config.get("playwright_mode", False):
+            playwright_process.playwright_engine(source_lang, target_lang, config.get("browser_login", False), './tmp/text_extracted.txt',)
         else:
             data_process.process_file('./tmp/text_extracted.txt', source_lang, target_lang)
             print(f"完成翻译,正在回写{extract.input_path}")
@@ -115,12 +118,16 @@ def check_update():
 
 
 def main():
-    check_update()
-    time.sleep(1)
+    print("正在检查更新...")
+    check_update_thread = threading.Thread(target=check_update)
+    check_update_thread.start()
     # 创建并启动线程
     if config.get("direct_mode", False):
         print("\n【直连模式】\n当前使用直连模式请求deepl的翻译返回，不使用deeplx引擎，如果频繁请求可能会遇到错误\n该模式只能翻译较小的文件，大文件请使用deeplx引擎\n在config.json中direct_mode项设置是否直连\n")
+    elif config.get("playwright_mode", False):
+        print("\n启用playwright模式（测试模式）")
     else:
+
         try: 
             deeplx_thread = threading.Thread(target=run_deeplx)
             deeplx_thread.start()

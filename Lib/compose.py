@@ -182,10 +182,6 @@ def compose_file(file_type, input_path):
         update_shared_strings_in_pptx(input_path, result_strings)
         print(f"生成翻译后的ppt文档...")
 
-def dev_mode():
-    file_type = "PowerPoint"
-    input_path = r"C:\Users\skyts\Desktop\开会班组员工.pptx"
-    compose_file (file_type, input_path)
 
 
 

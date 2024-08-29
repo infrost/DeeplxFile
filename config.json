@@ -1,7 +1,10 @@
 {
     "save_original": false,
-    "version": "0.2.3",
+    "version": "0.5.0",
     "dev": false,
     "direct_mode": false,
-    "i18n": "ZH"
+    "playwright_mode": true,
+    "i18n": "ZH",
+    "playwright_headless": false,
+    "browser_login": false
 }
