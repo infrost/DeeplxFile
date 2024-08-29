@@ -1,9 +1,12 @@
 from playwright.sync_api import sync_playwright
 import os
 import time
+from pathlib import Path
 
 output_dir = './out'
 os.makedirs(output_dir, exist_ok=True)
+default_edge_path = Path("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
+make_edge_happy = False
 
 def count_words(line):
     # 统计一行中的词数，以空格分隔
@@ -38,6 +41,7 @@ def process_file(file_path):
     return strings_array
 
 def translate_text(page, text):
+    global make_edge_happy
     # 使用CSS选择器定位输入框元素
     input_element = page.query_selector('div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
     
@@ -52,14 +56,38 @@ def translate_text(page, text):
     output_element = page.wait_for_selector('section[aria-labelledby="translation-target-heading"] div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
     
     if output_element:
-        original_lines = len(text.split('\n')) + 1
+        original_lines = len(text.split('\n'))+1
         retry_count = 0 
         while True:
             time.sleep(1)  # 每秒检查一次
             translated_text = output_element.inner_text()
-            translated_lines = len(translated_text.split('\n'))
+            #print(f"原译文{translated_text}")
+            if make_edge_happy:
+                # 将翻译文本按行分割成列表
+                translated_lines = translated_text.splitlines()
+                # 创建一个新的列表来存储处理后的结果
+                processed_result = []
+                empty_line_count = 0  # 用于计数连续空行
+                # 每三行处理一次
+                for line in translated_lines:
+                    if line.strip() == "":  # 如果是空行
+                        empty_line_count += 1
+                        # 只在连续空行达到3的情况下保留一个
+                        if empty_line_count == 3:
+                            processed_result.append("")  # 添加一个空行
+                    else:
+                        # 遇到非空行时，重置空行计数
+                        empty_line_count = 0
+                        processed_result.append(line)  # 添加非空行
+                
+                # 将处理后的结果合并成字符串
+                translated_text = "\n".join(processed_result)
+                #print(f"处理后译文{translated_text}")
+                translated_lines = len(translated_text.split('\n')) + 1
+            else:
+                translated_lines = len(translated_text.split('\n'))
             print(f"已翻译{translated_lines}/{original_lines}行")
-            if translated_lines == original_lines or translated_lines == original_lines+1:
+            if translated_lines == original_lines:
                 return translated_text
             retry_count += 1
             if retry_count >= 10:
@@ -85,16 +113,28 @@ def translate_text(page, text):
         print("翻译结果元素未找到")
         return None
 
-def playwright_engine(source_lang, target_lang, browser_login, playwright_headless, input_file_path = 'text_extracted.txt'):
+def playwright_engine(source_lang, target_lang, browser_login, playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'):
+    global make_edge_happy
     strings_array = process_file(input_file_path)
     output_file_path = os.path.join(output_dir, 'translated_result.txt')
     with sync_playwright() as p:
         # Launch the browser
         print("正在拉起浏览器")
-        browser = p.webkit.launch(executable_path="./Lib/Webkit/Playwright.exe", headless=playwright_headless)
+        if Path(playwright_path).exists():
+            browser_executable_path = Path(playwright_path)
+            browser = p.webkit.launch(executable_path=browser_executable_path, headless=playwright_headless)
+            make_edge_happy = False
+        elif default_edge_path.exists():
+            print("未找到webikit内核，使用edge内核，但该模式可能兼容性有问题")
+            browser_executable_path = default_edge_path
+            browser = p.chromium.launch(executable_path=browser_executable_path, headless=playwright_headless)
+            make_edge_happy = True
+        else:
+            raise FileNotFoundError("找不到Playwright内核")
+
         #browser = p.webkit.launch(headless=playwright_headless)  # Set headless=False if you want to see the browser UI
         page = browser.new_page()
-        page.goto(f"https://www.deepl.com/translator#{source_lang}/{target_lang}")
+        page.goto(f"https://www.deepl.com/translator#{source_lang}/{target_lang}/")
         
         with open(output_file_path, 'w', encoding='utf-8') as result_file:
             for i, s in enumerate(strings_array):

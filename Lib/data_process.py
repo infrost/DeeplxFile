@@ -98,7 +98,7 @@ def process_file(file_path, source_lang, target_lang):
                         break  # 成功处理后退出重试循环
 
                     else:
-                        raise ValueError("未找到返回数据，可能是因为请求过于频繁，程序将会尝试重试")
+                        raise ValueError("未找到返回数据，可能是因为请求过于频繁，程序将会尝试重试\n 或者请重启程序然后使用playwright模式")
                 
                 except (httpx.RequestError, ValueError) as exc:
                     retry_count += 1

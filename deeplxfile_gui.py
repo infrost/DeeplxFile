@@ -5,22 +5,11 @@ import time
 import requests
 import json
 import sys
-from tkinter import Tk, StringVar, BooleanVar, Label, OptionMenu, Button, Checkbutton, Frame, messagebox, DISABLED, NORMAL
+from tkinter import Tk, Entry, StringVar, BooleanVar, Label, OptionMenu, Button, Checkbutton, Frame, messagebox, DISABLED, NORMAL
 from tkinter.ttk import Notebook, Separator
 from Lib import compose, data_process, extract, direct_mode, playwright_process
 from Lib.config import config, save_config
 
-
-class RedirectOutput:
-    def __init__(self, text_widget):
-        self.text_widget = text_widget
-
-    def write(self, text):
-        self.text_widget.insert(END, text)
-        self.text_widget.see(END)
-
-    def flush(self):
-        pass
 
 def run_deeplx():
     exe_path = os.path.join("Lib", "deeplx_windows_amd64.exe")
@@ -71,7 +60,7 @@ def process_translation():
     if config.get("direct_mode", False):
         direct_mode.process_file('./tmp/text_extracted.txt', source_lang, target_lang)
     elif config.get("playwright_mode", False):
-        playwright_process.playwright_engine(source_lang, target_lang, config.get("browser_login", False), config.get("playwright_headless", False), './tmp/text_extracted.txt')
+        playwright_process.playwright_engine(source_lang, target_lang, config.get("browser_login", False), config.get("playwright_headless", False), config.get("playwright_path", "./Lib/Webkit/Playwright.exe"), './tmp/text_extracted.txt')
     else:
         data_process.process_file('./tmp/text_extracted.txt', source_lang, target_lang)
         print(f"完成翻译,正在回写{extract.input_path}")
@@ -116,6 +105,7 @@ def save_and_exit():
     config['browser_login'] = browser_login_var.get()
     config['save_original'] = save_original_var.get()
     config['playwright_headless'] = playwright_headless_var.get()
+    config['playwright_path'] = playwright_path_var.get() 
     save_config(config)
     messagebox.showinfo("成功","设置已保存")
 
@@ -153,9 +143,7 @@ source_label = Label(translate_frame, text="选择源语言:")
 source_label.pack(pady=(10, 5))
 
 source_menu = OptionMenu(translate_frame, source_lang_var, *[lang[0] for lang in languages])
-source_menu.pack()
-
-Separator(translate_frame, orient='horizontal').pack(fill='x', pady=10)
+source_menu.pack(pady=10)
 
 target_label = Label(translate_frame, text="选择目标语言:")
 target_label.pack(pady=(10, 5))
@@ -205,8 +193,17 @@ playwright_headless_var.set(config.get("playwright_headless", False))
 playwright_headless_checkbox = Checkbutton(playwright_frame, text="隐藏操作过程", variable=playwright_headless_var)
 playwright_headless_checkbox.pack(anchor='w')
 
-comment_label2 = Label(playwright_frame, text="启用后可以节约系统资源，加快翻译速度")
+comment_label2 = Label(playwright_frame, text="隐藏后可以节约系统资源，加快翻译速度")
 comment_label2.pack(anchor='w')
+
+playwright_path_var = StringVar(playwright_frame)
+playwright_path_var.set(config.get("playwright_path", "")) 
+playwright_path_label = Label(playwright_frame, text="Playwright 内核路径:")
+playwright_path_label.pack(anchor='w')
+playwright_path_entry = Entry(playwright_frame, textvariable=playwright_path_var, width=30)
+playwright_path_entry.pack(anchor='w',padx = 5)
+
+
 
 save_original_var = BooleanVar(settings_frame)
 save_original_var.set(config.get("save_original", False))
