@@ -3,7 +3,8 @@
 
 ------------------
 点击[这里下载](https://github.com/infrost/DeeplxFile/releases)
-在[这里查看详细介绍]()
+
+在[这里查看详细介绍](https://blog.infrost.site/2024/08/29/DeeplxFile/)
 
 ## 功能介绍
 ### 这个软件有什么优点？
@@ -18,6 +19,7 @@
 ![FileSupport](/images/deeplx_file_support.png)
 
 ### Playwright模式（Windows）
+![playwright.gif](/images/playwright.gif)
 > 从`v0.5.0`版本开始支持，可在设置选项卡中可开启`Playwright`模式。
 > 该模式是不依赖项目`deeplx`的，基于微软爬虫项目`Playwright`的实现。
 > releases中的`_Lite`版本不包含该模式所需要的运行文件（webkit浏览器内核）。
