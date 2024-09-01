@@ -1,6 +1,9 @@
 # DeeplxFile
 基于Deeplx/playwright提供的简单易用，快速，免费，不限制文件大小，支持超长文本翻译的文件翻译工具
 
+![简体中文](https://github.com/infrost/DeeplxFile)
+![English](/README_translated.md)
+
 ------------------
 点击[这里下载](https://github.com/infrost/DeeplxFile/releases)
 
@@ -18,6 +21,16 @@
 以Excel为例，DeepL免费版不支持Excel翻译，谷歌不支持超过10MB的大文件翻译，DeeplxFile文档翻译无大小限制
 ![FileSupport](/images/deeplx_file_support.png)
 
+### 翻译PDF并转换为可编辑的.docx文档
+现已支持该功能，但由于PDF转换功能体积较为庞大，请前往独立下载：
+[pdf2docxserver](https://github.com/infrost/pdf2docxserver/releases/)
+
+**下载后双击运行这个转换服务软件，并保持打开状态。**
+
+**使用`DeeplxFile`翻译的时候会自动调用转换服务。**
+翻译效果如图：
+![pdf_translation](/images/pdf_translate.png)
+
 ### Playwright模式（Windows）
 ![playwright.gif](/images/playwright.gif)
 > 从`v0.5.0`版本开始支持，可在设置选项卡中可开启`Playwright`模式。
@@ -33,6 +46,7 @@
 ## 我该如何使用？
 ### Windows
 提供了编译好的exe版本, 运行安装程序即可
+
 **推荐** 下载`DeeplxFile_setup_windows_Full.exe` 解压安装，该版本带有完整webkit内核，playwright模式稳定性更好。
 `Lite`版本不带有webkit内核，会调用系统自带的Edge浏览器，因此体积更小，但目前对edge的支持还在测试阶段，如果你不太需要playwright模式，可以用这个版本。
 （你也可以设置里自己指定webkit内核）
@@ -40,6 +54,7 @@
 ### MacOS
 
 **即将支持playwright模式**
+
 右键解压出来的文件夹，选择在文件夹打开新终端，
 终端中输入
 ```bash
@@ -59,6 +74,13 @@ python deeplxfile_gui.py
 ## 版本说明
 
 ```bash
+--------- V0.5.3--------------
+提供登录选项,在设置中开启后，可以先登录deepl账号再进行翻译，有更大的单词字符翻译上限。
+支持了Playwright下强制指定目标语言，适用于多语言混合文档。
+支持PDF翻译（插件形式，见使用说明），
+支持了txt,md文档翻译
+为软件增加一个图标，感谢[openvc](https://github.com/infrost/DeeplxFile/issues/3)
+
 --------- V0.5.2--------------
 提供了调用系统edge浏览器的playwright方法，更加轻量（完整版的更加稳定）
 

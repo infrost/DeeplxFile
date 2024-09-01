@@ -173,14 +173,29 @@ def compose_file(file_type, input_path):
         # 更新 Excel 文件中的 sharedStrings.xml
         update_shared_strings_in_xlsx(input_path, result_strings)
         print(f"生成翻译后的电子表格...")
-
-    if file_type == "Word":
+    elif file_type == "Word":
         update_shared_strings_in_docx(input_path, result_strings)
         print(f"生成翻译后的word文档...")
-
-    if file_type == "PowerPoint":
+    elif file_type == "PowerPoint":
         update_shared_strings_in_pptx(input_path, result_strings)
         print(f"生成翻译后的ppt文档...")
+    elif file_type == "PDF":
+        update_shared_strings_in_docx(input_path, result_strings)
+        print(f"生成翻译后的PDF文档...")
+    elif file_type == "TEXT":
+        base_name, ext = os.path.splitext(input_path)
+        output_path = base_name + '_translated' + ext
+        with open(output_path, 'w', encoding='utf-8') as f:
+            for string in result_strings:
+                f.write(string + '\n')
+        print(f"生成翻译后的txt文档")
+    elif file_type == "Markdown":
+        base_name, ext = os.path.splitext(input_path)
+        output_path = base_name + '_translated' + ext
+        with open(output_path, 'w', encoding='utf-8') as f:
+            for string in result_strings:
+                f.write(string + '\n')
+        print(f"生成翻译后的Markdown文档")
 
 
 

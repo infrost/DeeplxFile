@@ -60,7 +60,9 @@ def process_translation():
     if config.get("direct_mode", False):
         direct_mode.process_file('./tmp/text_extracted.txt', source_lang, target_lang)
     elif config.get("playwright_mode", False):
-        playwright_process.playwright_engine(source_lang, target_lang, config.get("browser_login", False), config.get("playwright_headless", False), config.get("playwright_path", "./Lib/Webkit/Playwright.exe"), './tmp/text_extracted.txt')
+        if config.get("browser_login", False):
+            messagebox.showinfo("注意","请留意控制台提示，\n登陆后在控制台按下回车继续程序")
+        playwright_process.playwright_engine(source_lang, target_lang, config.get("force_lang_select", False), config.get("browser_login", False), config.get("playwright_headless", False), config.get("playwright_path", "./Lib/Webkit/Playwright.exe"), './tmp/text_extracted.txt')
     else:
         data_process.process_file('./tmp/text_extracted.txt', source_lang, target_lang)
         print(f"完成翻译,正在回写{extract.input_path}")
@@ -106,6 +108,7 @@ def save_and_exit():
     config['save_original'] = save_original_var.get()
     config['playwright_headless'] = playwright_headless_var.get()
     config['playwright_path'] = playwright_path_var.get() 
+    config['force_lang_select'] = force_lang_select_var.get()
     save_config(config)
     messagebox.showinfo("成功","设置已保存")
 
@@ -113,7 +116,8 @@ def save_and_exit():
 root = Tk()
 #root.geometry("200x330")
 root.title("DeeplxFile 翻译工具")
-
+icon_path = "./Lib/deeplxfile.ico"
+root.iconbitmap(icon_path)
 
 notebook = Notebook(root)
 
@@ -122,16 +126,17 @@ notebook.add(translate_frame, text="翻译")
 
 
 languages = [
-    ("中文", "ZH"),
-    ("英文", "EN"),
-    ("日文", "JA"),
-    ("韩文", "KO"),
-    ("法文", "FR"),
-    ("德文", "DE"),
-    ("俄文", "RU"),
-    ("西班牙文", "ES"),
-    ("意大利文", "IT"),
-    ("葡萄牙文", "PT"),
+    ("中文(简体)", "zh-Hans"),
+    ("中文(繁体)","zh-Hant"),
+    ("英文", "en"),
+    ("日文", "ja"),
+    ("韩文", "ko"),
+    ("法文", "fr"),
+    ("德文", "de"),
+    ("俄文", "ru"),
+    ("西班牙文", "es"),
+    ("意大利文", "it"),
+    ("葡萄牙文", "pt"),
 ]
 
 source_lang_var = StringVar(translate_frame)
@@ -187,6 +192,8 @@ browser_login_var = BooleanVar(playwright_frame)
 browser_login_var.set(config.get("browser_login", False))
 browser_login_checkbox = Checkbutton(playwright_frame, text="手动登入账号", variable=browser_login_var)
 browser_login_checkbox.pack(anchor='w', pady = 10)
+comment_label3 = Label(playwright_frame, text="开启后，程序拉起浏览器后会等待用户登录。\n 登录后单次翻译的字符会更多，更稳定。")
+comment_label3.pack(anchor='w')
 
 playwright_headless_var = BooleanVar(playwright_frame)
 playwright_headless_var.set(config.get("playwright_headless", False))
@@ -195,6 +202,13 @@ playwright_headless_checkbox.pack(anchor='w')
 
 comment_label2 = Label(playwright_frame, text="隐藏后可以节约系统资源，加快翻译速度")
 comment_label2.pack(anchor='w')
+
+force_lang_select_var = BooleanVar(playwright_frame)
+force_lang_select_var.set(config.get("force_lang_select", False))
+force_lang_select_checkbox = Checkbutton(playwright_frame, text="强制指定目标语言", variable=force_lang_select_var)
+force_lang_select_checkbox.pack(anchor='w')
+comment_label4 = Label(playwright_frame, text="少数多语言混合文本，无法正确翻译到指定语言时\n可以尝试开启，略微影响速度")
+comment_label4.pack(anchor='w')
 
 playwright_path_var = StringVar(playwright_frame)
 playwright_path_var.set(config.get("playwright_path", "")) 

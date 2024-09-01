@@ -11,9 +11,10 @@ it does not cause an error.
 import os
 import zipfile
 import tempfile
+import socket
+import json
 from lxml import etree as ET
-import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, Tk
 
 tmp_dir = './tmp'
 input_path = ""
@@ -102,6 +103,33 @@ def extract_strings_from_pptx(file_path):
         
         return strings
 
+def requests_docx(message, docx_path):
+    try:
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('localhost', 9999))
+
+        # 发送消息到服务器
+        client_socket.send(message.encode('utf-8'))
+        print(f"Sent requests to server")
+
+        # 接收服务器的响应
+        response = client_socket.recv(1024).decode('utf-8')
+        print(f"Received from server..")
+
+        # 调用docx处理流程
+        strings = extract_strings_from_docx(docx_path)
+
+    except socket.error as e:
+        print(f"Socket error: {e}\n请检查PDF服务是否运行\n 如果未下载请前往下载\nhttps://github.com/infrost/pdf2docxserver/releases/")
+        strings = ""
+    except Exception as e:
+        strings = ""
+        print(f"An unexpected error occurred: {e}")
+    finally:
+        client_socket.close()
+    return strings
+
+
 
 def write_strings_to_file(strings, output_file):
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -111,7 +139,7 @@ def write_strings_to_file(strings, output_file):
 
 def extract_file():
     # 创建Tkinter窗口但不显示
-    root = tk.Tk()
+    root = Tk()
     root.withdraw()  # 隐藏主窗口
 
     global process_cancelled
@@ -119,7 +147,7 @@ def extract_file():
     file_path = filedialog.askopenfilename(
         title='选择一个文件，目前支持了Excel,Word,PowerPoint', 
         filetypes=[
-            ('Excel, PowerPoint, Word', '*.xlsx *.pptx *.docx'),
+            ('Excel, PowerPoint, Word, PDF, Markdown, Text', '*.xlsx *.pptx *.docx *.pdf *.md *.txt'),
             ('All Files', '*.*')
             ]
         )
@@ -132,11 +160,11 @@ def extract_file():
     global input_path
     input_path = file_path
 
-    supported_files = [".xlsx",".docx",".pptx"]
+    supported_files = [".xlsx",".docx",".pptx", ".pdf", ".md", ".txt"]
     file_extension = os.path.splitext(file_path)[1].lower()
     global file_type
     if file_extension not in supported_files:
-        print("错误：目前只支持Word, Excel, PowerPoint文件")
+        print("错误：不受支持的文件")
         process_cancelled = True
         return
     if file_extension == ".xlsx":
@@ -148,6 +176,32 @@ def extract_file():
     elif file_extension == ".pptx":
         file_type = "PowerPoint"
         strings = extract_strings_from_pptx(file_path)
+    elif file_extension == ".pdf":
+        file_type = "PDF"
+        base, _ = os.path.splitext(file_path)
+        docx_path = base + '.docx'
+        data = {
+            "source_path": file_path,
+            "output_path": docx_path,
+            "arg": False
+        }
+        message = json.dumps(data)
+        strings = requests_docx(message, docx_path)
+        if not strings:
+            process_cancelled = True
+            return
+        input_path = docx_path
+    elif file_extension == ".md" or ".txt":
+        if file_extension == ".md":
+            file_type = "TEXT"
+        else:
+            file_type = "Markdown"
+        
+        print (f"纯文本文件，无需预处理")
+        strings = []
+        with open(input_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                strings.append(line.strip())
 
 
     print(f"已处理{file_type}文件: {input_path}")

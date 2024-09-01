@@ -1,12 +1,14 @@
-from playwright.sync_api import sync_playwright
 import os
 import time
+from playwright.sync_api import sync_playwright
 from pathlib import Path
+from Lib.config import config
 
 output_dir = './out'
 os.makedirs(output_dir, exist_ok=True)
 default_edge_path = Path("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
 make_edge_happy = False
+pause_to_wait = False
 
 def count_words(line):
     # 统计一行中的词数，以空格分隔
@@ -40,21 +42,53 @@ def process_file(file_path):
     
     return strings_array
 
-def translate_text(page, text):
+def force_select(page, source_lang, target_lang):
+
+    page.wait_for_selector('span[data-testid="translator-source-lang"]')
+    page.click('span[data-testid="translator-source-lang"]')
+
+    # 使用 XPath 选择器
+    lang_xpath = f'//button[@data-testid="translator-lang-option-{source_lang}"]'
+    page.wait_for_selector(lang_xpath)
+    page.click(lang_xpath)
+
+    print(f"已强制指定源语言{source_lang}")
+
+    # 点击目标语言选择区域
+    page.wait_for_selector('div[data-testid="translator-target-lang"]')
+    page.click('div[data-testid="translator-target-lang"]')
+
+    # 使用 XPath 选择器
+    lang_xpath = f'//button[@data-testid="translator-lang-option-{target_lang}"]'
+    page.wait_for_selector(lang_xpath)
+    page.click(lang_xpath)
+
+    print(f"已强制指定目标语言{target_lang}")
+
+def translate_text(page, text, source_lang, target_lang, force_lang_select):
     global make_edge_happy
+    global pause_to_wait
+    if pause_to_wait:
+        input("手动登录后按enter继续")
+        pause_to_wait = False
+
+
     # 使用CSS选择器定位输入框元素
     input_element = page.query_selector('div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
-    
+    #print(text)
+
     if input_element:
         input_element.fill('')  # 清空输入框
         input_element.fill(text)
     else:
         print("输入框元素未找到")
         return None
-    
+    if force_lang_select:
+        force_select(page, source_lang, target_lang)
+
     # 使用wait_for_selector方法等待翻译结果出现
     output_element = page.wait_for_selector('section[aria-labelledby="translation-target-heading"] div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
-    
+
     if output_element:
         original_lines = len(text.split('\n'))+1
         retry_count = 0 
@@ -62,21 +96,18 @@ def translate_text(page, text):
             time.sleep(1)  # 每秒检查一次
             translated_text = output_element.inner_text()
             #print(f"原译文{translated_text}")
+            
+            #edge浏览器得到的返回内容和webkit不一样
             if make_edge_happy:
-                # 将翻译文本按行分割成列表
                 translated_lines = translated_text.splitlines()
-                # 创建一个新的列表来存储处理后的结果
                 processed_result = []
-                empty_line_count = 0  # 用于计数连续空行
-                # 每三行处理一次
+                empty_line_count = 0  
                 for line in translated_lines:
-                    if line.strip() == "":  # 如果是空行
+                    if line.strip() == "":  
                         empty_line_count += 1
-                        # 只在连续空行达到3的情况下保留一个
                         if empty_line_count == 3:
                             processed_result.append("")  # 添加一个空行
                     else:
-                        # 遇到非空行时，重置空行计数
                         empty_line_count = 0
                         processed_result.append(line)  # 添加非空行
                 
@@ -113,8 +144,13 @@ def translate_text(page, text):
         print("翻译结果元素未找到")
         return None
 
-def playwright_engine(source_lang, target_lang, browser_login, playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'):
+def playwright_engine(source_lang, target_lang, force_lang_select, browser_login, playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'):
     global make_edge_happy
+    global pause_to_wait
+    if browser_login:
+        pause_to_wait = True
+    else:
+        pause_to_wait = False
     strings_array = process_file(input_file_path)
     output_file_path = os.path.join(output_dir, 'translated_result.txt')
     with sync_playwright() as p:
@@ -138,7 +174,7 @@ def playwright_engine(source_lang, target_lang, browser_login, playwright_headle
         
         with open(output_file_path, 'w', encoding='utf-8') as result_file:
             for i, s in enumerate(strings_array):
-                translation = translate_text(page, s)
+                translation = translate_text(page, s, source_lang, target_lang, force_lang_select)
                 if translation:
                     print(f"写入翻译结果 {i + 1}, 正在尝试下一个资源段翻译")
                     result_file.write(translation)
