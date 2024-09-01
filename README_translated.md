@@ -26,11 +26,11 @@ Take Excel as an example, DeepL free version doesn't support Excel translation, 
 
 ### Translate PDF and convert to editable .docx documents
 This feature is now supported, but due to the large size of the PDF conversion feature, please go to the standalone download:
-![pdf2docxserver](https://github.com/infrost/pdf2docxserver/releases/)
+[pdf2docxserver](https://github.com/infrost/pdf2docxserver/releases/)
 
-**Double-click to run this conversion service software after download and keep it open. **
+**Double-click to run this conversion service software after download and keep it open.**
 
-**The conversion service will be called automatically when you use `DeeplxFile` to translate. **
+**The conversion service will be called automatically when you use `DeeplxFile` to translate.**
 The translation effect is as shown in the picture:
 ![pdf_translation](/images/pdf_translate.png)
 
