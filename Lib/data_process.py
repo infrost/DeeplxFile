@@ -1,23 +1,3 @@
-"""
-打开目录下text_extracted.txt
-该txt格式如下：
-hello word
-word 0
-openai
-gpt
-（每条string一行）
-
-for 第i行，总共m行
-统计词数 = 0
-统计每行的词数（可以以空格区分，n个空格就是n+1个词）
-统计词数 += i行词数
-如果第i行词数>500，
-截断，从1-i行生成第一个string（array）
-打印
-继续上面操作，直至生成完所有string（array）
-
-
-"""
 import httpx
 import json
 import os
@@ -73,11 +53,15 @@ def process_file(file_path, source_lang, target_lang):
             retry_count = 0
             max_retries = 6
             success = False
+            timeout_value = 20.0  # 秒
+            retry_interval = 5.0
             while retry_count < max_retries:
                 
                 try:
+                    print("正在向deepl服务器发送请求")
                     # 发送POST请求并打印结果
-                    r = httpx.post(url=deeplx_api, data=post_data)
+                    r = httpx.post(url=deeplx_api, data=post_data, timeout=timeout_value)
+                    print("正在等待回传结果...")
                     response_data = r.json()
 
                     # 检查 'data' 是否存在
@@ -98,21 +82,21 @@ def process_file(file_path, source_lang, target_lang):
                         break  # 成功处理后退出重试循环
 
                     else:
-                        raise ValueError("未找到返回数据，可能是因为请求过于频繁，程序将会尝试重试\n 或者请重启程序然后使用playwright模式")
+                        raise ValueError("未找到返回数据，可能是因为请求过于频繁，程序将会尝试重试\n 这可能是deeplx内核的问题，可以重启程序然后尝试兼容性更强的playwright模式")
                 
                 except (httpx.RequestError, ValueError) as exc:
                     retry_count += 1
                     if retry_count < max_retries:
-                        print(f"Error occurred: {exc}. Retrying in 10 seconds... ({retry_count}/{max_retries})")
-                        time.sleep(10)
+                        print(f"发生错误: {exc}. 程序将在{retry_interval} 秒后尝试... ({retry_count}/{max_retries})\n你可能需要切换到兼容性更强的playwright模式")
+                        time.sleep(retry_interval)
                     else:
-                        print(f"Failed after {max_retries} retries. Moving on to the next string.")
+                        print(f"已达到最大尝试值： {max_retries} ，翻译失败，正在尝试下一区块翻译")
             
             if not success:
                 error_lines = s.splitlines()
                 error_messages = [f"Error: {error_line}" for error_line in error_lines]
                 error_message = "\n".join(error_messages) + "\n"
                 result_file.write(error_message)
-                print(f"Failed after {max_retries} retries. Moving on to the next string.")
+                print(f"已达到最大尝试值： {max_retries} ，翻译失败，正在尝试下一区块翻译")
 
 

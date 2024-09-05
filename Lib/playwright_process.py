@@ -1,5 +1,7 @@
 import os
 import time
+import subprocess
+import psutil
 from playwright.sync_api import sync_playwright
 from pathlib import Path
 from Lib.config import config
@@ -41,32 +43,72 @@ def process_file(file_path):
     
     return strings_array
 
+def initialize_edge(disable_user_profile):
+    # 结束现有edge进程
+    print("正在尝试结束现有edge示例...")
+    for proc in psutil.process_iter():
+        try:
+            if proc.name().lower() == "msedge.exe":
+                proc.terminate()
+                proc.wait(timeout=5)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+    if not disable_user_profile:
+        # 构建 Edge 默认用户数据目录路径
+        print("正在构建带用户数据的调试模式edge...")
+        username = os.getlogin()
+        if os.name == 'nt':  # Windows
+            user_data_dir = fr"C:\Users\{username}\AppData\Local\Microsoft\Edge\User Data"
+        elif os.name == 'posix':  # macOS/Linux
+            if 'darwin' in os.uname().sysname.lower():  # macOS
+                user_data_dir = f"/Users/{username}/Library/Application Support/Microsoft Edge"
+            else:  # Linux
+                user_data_dir = f"/home/{username}/.config/microsoft-edge"
+        else:
+            raise OSError("Unsupported operating system")
+        if not os.path.exists(user_data_dir):
+            print(f"用户数据目录不存在: {user_data_dir}")
+            user_data_dir = None
+        if user_data_dir:
+            subprocess.Popen([default_edge_path, '--remote-debugging-port=9222', f'--user-data-dir={user_data_dir}'], shell = True)
+        else:
+            subprocess.Popen([default_edge_path, '--remote-debugging-port=9222'], shell = True)
+    else:
+        subprocess.Popen([default_edge_path, '--remote-debugging-port=9222', '--inprivate'], shell = True)
+        print("正在拉起不带用户数据的edge")
+
+
 def force_select(page, source_lang, target_lang):
+    print("尝试强制指定源语言\n如果卡在此处可能需要手动点击一下源语言选择")
+    try:
+        page.wait_for_selector('span[data-testid="translator-source-lang"]')
+        page.click('span[data-testid="translator-source-lang"]')
 
-    page.wait_for_selector('span[data-testid="translator-source-lang"]')
-    page.click('span[data-testid="translator-source-lang"]')
-    time.sleep(1)
-    # 使用 XPath 选择器
-    lang_xpath = f'//button[@data-testid="translator-lang-option-{source_lang}"]'
-    page.wait_for_selector(lang_xpath)
-    page.click(lang_xpath)
+        # 使用 XPath 选择器
+        lang_xpath = f'//button[@data-testid="translator-lang-option-{source_lang}"]'
+        page.wait_for_selector(lang_xpath)
+        page.click(lang_xpath)
 
-    print(f"已强制指定源语言{source_lang}")
+        print(f"已强制指定源语言{source_lang}")
+    except Exception as e:
+        print(f"设置源语言时发生错误: {e}")
+    print("尝试强制指定目标语言\n如果卡在此处可能需要手动点击一下目标语言选择")
+    try:
+        # 点击目标语言选择区域
+        page.wait_for_selector('div[data-testid="translator-target-lang"]')
+        page.click('div[data-testid="translator-target-lang"]')
 
-    # 点击目标语言选择区域
-    page.wait_for_selector('div[data-testid="translator-target-lang"]')
-    page.click('div[data-testid="translator-target-lang"]')
+        # 使用 XPath 选择器
+        lang_xpath = f'//button[@data-testid="translator-lang-option-{target_lang}"]'
+        page.wait_for_selector(lang_xpath)
+        page.click(lang_xpath)
 
-    # 使用 XPath 选择器
-    lang_xpath = f'//button[@data-testid="translator-lang-option-{target_lang}"]'
-    page.wait_for_selector(lang_xpath)
-    page.click(lang_xpath)
-
-    print(f"已强制指定目标语言{target_lang}")
+        print(f"已强制指定目标语言{target_lang}")
+    except Exception as e:
+        print(f"设置目标语言时发生错误: {e}")
 
 def translate_text(page, text, source_lang, target_lang, force_lang_select):
     global make_edge_happy
-
     # 使用CSS选择器定位输入框元素
     input_element = page.query_selector('div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
     #print(text)
@@ -79,6 +121,8 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
         return None
     if force_lang_select:
         force_select(page, source_lang, target_lang)
+
+    time.sleep(1)
 
     # 使用wait_for_selector方法等待翻译结果出现
     output_element = page.wait_for_selector('section[aria-labelledby="translation-target-heading"] div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
@@ -106,9 +150,9 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
                         processed_result.append(line)  # 添加非空行
                 
                 # 将处理后的结果合并成字符串
-                translated_text = "\n".join(processed_result)
+                translated_text = "\n".join(processed_result) + "\n"
                 #print(f"处理后译文{translated_text}")
-                translated_lines = len(translated_text.split('\n')) + 1
+                translated_lines = len(translated_text.split('\n'))
             else:
                 translated_lines = len(translated_text.split('\n'))
             print(f"已翻译{translated_lines}/{original_lines}行")
@@ -138,10 +182,17 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
         print("翻译结果元素未找到")
         return None
 
-def playwright_engine(source_lang, target_lang, force_lang_select, browser_login, playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'):
+def playwright_engine(
+    source_lang, target_lang, force_lang_select, 
+    browser_login, disable_user_profile, 
+    playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'
+    ):
     global make_edge_happy
+    if browser_login or not Path(playwright_path).exists():
+        initialize_edge(disable_user_profile)
     strings_array = process_file(input_file_path)
     output_file_path = os.path.join(output_dir, 'translated_result.txt')
+    
     with sync_playwright() as p:
         # Launch the browser
         print("正在拉起浏览器")
@@ -149,16 +200,16 @@ def playwright_engine(source_lang, target_lang, force_lang_select, browser_login
             browser_executable_path = Path(playwright_path)
             browser = p.webkit.launch(executable_path=browser_executable_path, headless=playwright_headless)
             make_edge_happy = False
+            page = browser.new_page()
         elif default_edge_path.exists():
-            print("未找到webikit内核，使用edge内核，但该模式可能兼容性有问题")
-            browser_executable_path = default_edge_path
-            browser = p.chromium.launch(executable_path=browser_executable_path, headless=playwright_headless)
+            print("正在使用edge内核，但该模式可能兼容性有问题")
+            browser = p.chromium.connect_over_cdp('http://127.0.0.1:9222')  # 连接到远程调试端口
+            context = browser.contexts[0]  # 获取已有的上下文
+            page = context.pages[0]
             make_edge_happy = True
         else:
             raise FileNotFoundError("找不到Playwright内核")
-
-        #browser = p.webkit.launch(headless=playwright_headless)  # Set headless=False if you want to see the browser UI
-        page = browser.new_page()
+        
         page.goto(f"https://www.deepl.com/translator#{source_lang}/{target_lang}/")
         
         with open(output_file_path, 'w', encoding='utf-8') as result_file:

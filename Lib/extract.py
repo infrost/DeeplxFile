@@ -14,7 +14,7 @@ import tempfile
 import socket
 import json
 from lxml import etree as ET
-from tkinter import filedialog, Tk
+from tkinter import filedialog
 
 tmp_dir = './tmp'
 input_path = ""
@@ -120,11 +120,11 @@ def requests_docx(message, docx_path):
         strings = extract_strings_from_docx(docx_path)
 
     except socket.error as e:
-        print(f"Socket error: {e}\n请检查PDF服务是否运行\n 如果未下载请前往下载\nhttps://github.com/infrost/pdf2docxserver/releases/")
+        raise Exception(f"Socket error: {e}\n请检查PDF服务是否运行\n 如果未下载请前往下载\nhttps://github.com/infrost/pdf2docxserver/releases/")
         strings = ""
     except Exception as e:
         strings = ""
-        print(f"An unexpected error occurred: {e}")
+        raise Exception(f"An unexpected error occurred: {e}")
     finally:
         client_socket.close()
     return strings
@@ -138,10 +138,6 @@ def write_strings_to_file(strings, output_file):
 
 
 def extract_file():
-    # 创建Tkinter窗口但不显示
-    root = Tk()
-    root.withdraw()  # 隐藏主窗口
-
     global process_cancelled
     # 打开文件选择对话框
     file_path = filedialog.askopenfilename(
@@ -193,9 +189,9 @@ def extract_file():
         input_path = docx_path
     elif file_extension == ".md" or ".txt":
         if file_extension == ".md":
-            file_type = "TEXT"
+            file_type = "Markown"
         else:
-            file_type = "Markdown"
+            file_type = "TEXT"
         
         print (f"纯文本文件，无需预处理")
         strings = []

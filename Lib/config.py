@@ -4,7 +4,7 @@ import json
 # 定义默认配置
 default_config = {
     "save_original": False, #保留原文件值
-    "version": "0.5.3",
+    "version": "0.5.5",
     "dev": False,
     "direct_mode": False,
     "playwright_mode": False,
@@ -12,7 +12,8 @@ default_config = {
     "playwright_headless": False,
     "playwright_path": "./Lib/Webkit/Playwright.exe",
     "browser_login": False,
-    "force_lang_select": False
+    "force_lang_select": False,
+    "disable_user_profile": False
 }
 
 # 定义配置文件的路径
