@@ -1,10 +1,13 @@
 {
     "save_original": false,
-    "version": "0.5.3",
+    "version": "0.5.5",
     "dev": false,
     "direct_mode": false,
     "playwright_mode": false,
     "i18n": "ZH",
     "playwright_headless": false,
-    "playwright_path": "./Lib/Webkit/Playwright.exe"
+    "playwright_path": "./Lib/Webkit/Playwright.exe",
+    "browser_login": false,
+    "force_lang_select": false,
+    "disable_user_profile": false
 }
