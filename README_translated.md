@@ -1,8 +1,9 @@
 # DeeplxFile
 Easy-to-use, fast, free, unlimited file size, file translation tool based on Deeplx/playwright for very long texts.
 
-! [Simplified Chinese](https://github.com/infrost/DeeplxFile)
-! [English](/README_translated.md)
+[Simplified Chinese](https://github.com/infrost/DeeplxFile)
+|
+[English](/README_translated.md)
 
 **The English Version is translated by DeeplxFile itself!**
 
@@ -17,24 +18,24 @@ At present, the excel translation of complex documents, especially large documen
 #### translation quality:
 Google Translate, complex formula references can not be correctly displayed, while DeeplxFile can correctly display the reference formula.
 And using DeepL as the translation source, in most cases, the effect of Chinese and English translation is better than Google.
-[HighQuality](/image) [HighQuality](/images/deeplxfile_quality.png)
+![HighQuality](/images/deeplxfile_quality.png)
 
 #### Translation File Support
 Take Excel as an example, DeepL free version doesn't support Excel translation, Google doesn't support translation of large files over 10MB, DeeplxFile document translation has no size limitation!
-! [FileSupport](/images/deeplx_file_support.png)
+![FileSupport](/images/deeplx_file_support.png)
 
 ### Translate PDF and convert to editable .docx documents
 This feature is now supported, but due to the large size of the PDF conversion feature, please go to the standalone download:
 [pdf2docxserver](https://github.com/infrost/pdf2docxserver/releases/)
 
-**Double-click to run this conversion service software after download and keep it open. **
+**Double-click to run this conversion service software after download and keep it open.**
 
-**The conversion service will be called automatically when you use `DeeplxFile` to translate. **
+**The conversion service will be called automatically when you use `DeeplxFile` to translate.**
 The translation effect is as shown in the picture:
-! [pdf_translation](/images/pdf_translate.png)
+![pdf_translation](/images/pdf_translate.png)
 
 ### Playwright mode (Windows)
-! [playwright.gif](/images/playwright.gif)
+![playwright.gif](/images/playwright.gif)
 > Supported since `v0.5.0`, `Playwright` mode can be enabled in the Settings tab.
 > This mode is independent of the project `deeplx` and is based on the implementation of the Microsoft crawler project `Playwright`.
 > The `_Lite` version in releases does not include the runtime files (webkit browser kernel) needed for this mode.

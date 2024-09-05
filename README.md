@@ -1,8 +1,9 @@
 # DeeplxFile
 基于Deeplx/playwright提供的简单易用，快速，免费，不限制文件大小，支持超长文本翻译的文件翻译工具
 
-![简体中文](https://github.com/infrost/DeeplxFile)
-![English](/README_translated.md)
+[简体中文](https://github.com/infrost/DeeplxFile)
+|
+[English](/README_translated.md)
 
 ------------------
 点击[这里下载](https://github.com/infrost/DeeplxFile/releases)
