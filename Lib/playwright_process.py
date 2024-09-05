@@ -8,7 +8,6 @@ output_dir = './out'
 os.makedirs(output_dir, exist_ok=True)
 default_edge_path = Path("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
 make_edge_happy = False
-pause_to_wait = False
 
 def count_words(line):
     # 统计一行中的词数，以空格分隔
@@ -46,7 +45,7 @@ def force_select(page, source_lang, target_lang):
 
     page.wait_for_selector('span[data-testid="translator-source-lang"]')
     page.click('span[data-testid="translator-source-lang"]')
-
+    time.sleep(1)
     # 使用 XPath 选择器
     lang_xpath = f'//button[@data-testid="translator-lang-option-{source_lang}"]'
     page.wait_for_selector(lang_xpath)
@@ -67,11 +66,6 @@ def force_select(page, source_lang, target_lang):
 
 def translate_text(page, text, source_lang, target_lang, force_lang_select):
     global make_edge_happy
-    global pause_to_wait
-    if pause_to_wait:
-        input("手动登录后按enter继续")
-        pause_to_wait = False
-
 
     # 使用CSS选择器定位输入框元素
     input_element = page.query_selector('div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
@@ -146,17 +140,12 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
 
 def playwright_engine(source_lang, target_lang, force_lang_select, browser_login, playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'):
     global make_edge_happy
-    global pause_to_wait
-    if browser_login:
-        pause_to_wait = True
-    else:
-        pause_to_wait = False
     strings_array = process_file(input_file_path)
     output_file_path = os.path.join(output_dir, 'translated_result.txt')
     with sync_playwright() as p:
         # Launch the browser
         print("正在拉起浏览器")
-        if Path(playwright_path).exists():
+        if Path(playwright_path).exists() and not browser_login:
             browser_executable_path = Path(playwright_path)
             browser = p.webkit.launch(executable_path=browser_executable_path, headless=playwright_headless)
             make_edge_happy = False
