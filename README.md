@@ -22,7 +22,11 @@
 以Excel为例，DeepL免费版不支持Excel翻译，谷歌不支持超过10MB的大文件翻译，DeeplxFile文档翻译无大小限制
 ![FileSupport](/images/deeplx_file_support.png)
 
-### 翻译PDF并转换为可编辑的.docx文档
+#### 简单易用的跨平台
+提供好了编译好的Windows / Mac OS，直接下载就能用。
+你也可以用python的源代码编译其他平台如Linux使用，或者直接在源代码上运行。
+
+### 翻译PDF并转换为可编辑的.docx文档 （Windows）
 现已支持该功能，但由于PDF转换功能体积较为庞大，请前往独立下载：
 [pdf2docxserver](https://github.com/infrost/pdf2docxserver/releases/)
 
@@ -32,7 +36,7 @@
 翻译效果如图：
 ![pdf_translation](/images/pdf_translate.png)
 
-### Playwright模式（Windows）
+### Playwright模式（Windows/Mac OS）
 ![playwright.gif](/images/playwright.gif)
 > 从`v0.5.0`版本开始支持，可在设置选项卡中可开启`Playwright`模式。
 > 该模式是不依赖项目`deeplx`的，基于微软爬虫项目`Playwright`的实现。
@@ -79,7 +83,7 @@ python deeplxfile_gui.py
 ```bash
 --------- V0.5.5/V0.5.6--------------
 支持macOS下的playwright（需要安装edge，要求版本：MacOS 12+）
-程序gui优化，bug修复
+程序GUI优化，bug修复
 
 --------- V0.5.3--------------
 提供登录选项,在设置中开启后，可以先登录deepl账号再进行翻译，有更大的单词字符翻译上限。
