@@ -54,9 +54,11 @@
 
 ### MacOS
 
-**即将支持playwright模式**
+**已支持playwright模式，需下载edge浏览器**
 
-右键解压出来的文件夹，选择在文件夹打开新终端，
+![MacOS](/images/MacOS.png)
+
+右键解压出来的文件，选择打开新终端，
 终端中输入
 ```bash
 ./deelxfile
@@ -75,6 +77,10 @@ python deeplxfile_gui.py
 ## 版本说明
 
 ```bash
+--------- V0.5.5/V0.5.6--------------
+支持macOS下的playwright（需要安装edge，要求版本：MacOS 12+）
+程序gui优化，bug修复
+
 --------- V0.5.3--------------
 提供登录选项,在设置中开启后，可以先登录deepl账号再进行翻译，有更大的单词字符翻译上限。
 支持了Playwright下强制指定目标语言，适用于多语言混合文档。
