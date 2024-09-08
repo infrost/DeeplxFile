@@ -58,7 +58,7 @@
 
 ### MacOS
 
-**已支持playwright模式，需下载edge浏览器**
+**已支持playwright模式，如果需使用请确保系统安装了edge浏览器**
 
 ![MacOS](/images/MacOS.png)
 
