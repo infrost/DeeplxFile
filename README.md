@@ -107,3 +107,6 @@ powerpoint 支持翻译大部分内容
 运行项目后会在目录下生成config.json
 设置`save_original`为`true`即可保留原文
 ```
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=infrost/deeplxfile&type=Date)](https://star-history.com/#infrost/deeplxfile&Date)
