@@ -23,33 +23,43 @@ process_cancelled = bool()
 if not os.path.exists(tmp_dir):
     os.makedirs(tmp_dir)
 
-def extract_strings_from_xlsx(file_path):
+def extract_strings_from_xlsx(file_path, enhance_mode):
     # 创建临时目录
     with tempfile.TemporaryDirectory() as tmpdirname:
         # 解压缩 .xlsx 文件
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             zip_ref.extractall(tmpdirname)
         
-        # 读取 sharedStrings.xml 文件
-        shared_strings_path = os.path.join(tmpdirname, 'xl', 'sharedStrings.xml')
-        
-        if not os.path.exists(shared_strings_path):
-            print("sharedStrings.xml 文件不存在。")
-            return []
-        
-        # 解析 XML 文件
-        tree = ET.parse(shared_strings_path)
-        root = tree.getroot()
-        
         # 存储字符串
         strings = []
         
+        if enhance_mode:
+            # 解析 workbook.xml 文件
+            workbook_path = os.path.join(tmpdirname, 'xl', 'workbook.xml')
+            if not os.path.exists(workbook_path):
+                print("workbook.xml 文件不存在。")
+                return
+            tree = ET.parse(workbook_path)
+            root = tree.getroot()
+
+            for sheet in root.iter('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheet'):
+                sheet_name = sheet.get('name', '')
+                if sheet_name:
+                    strings.append(sheet_name)
+        
+        # 读取 sharedStrings.xml 文件
+        shared_strings_path = os.path.join(tmpdirname, 'xl', 'sharedStrings.xml')
+        if not os.path.exists(shared_strings_path):
+            print("sharedStrings.xml 文件不存在。")
+            return []
+        tree = ET.parse(shared_strings_path)
+        root = tree.getroot()
         # 查找所有 <t> 标签
         for t in root.iter('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t'):
             # 将所有换行符替换为单个空格，确保每个 <t> 标签的内容是一行
             text_content = t.text.replace('\n', ' ') if t.text else ''
             strings.append(text_content)
-        
+
         return strings
 
 
@@ -137,7 +147,7 @@ def write_strings_to_file(strings, output_file):
             f.write(f"{string}\n")
 
 
-def extract_file():
+def extract_file(enhance_mode):
     global process_cancelled
     # 打开文件选择对话框
     file_path = filedialog.askopenfilename(
@@ -165,7 +175,7 @@ def extract_file():
         return
     if file_extension == ".xlsx":
         file_type = "Excel"
-        strings = extract_strings_from_xlsx(file_path)
+        strings = extract_strings_from_xlsx(file_path, enhance_mode)
     elif file_extension == ".docx":
         file_type = "Word"
         strings = extract_strings_from_docx(file_path)

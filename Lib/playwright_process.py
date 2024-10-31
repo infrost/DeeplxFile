@@ -8,7 +8,6 @@ from Lib.config import config
 
 output_dir = './out'
 os.makedirs(output_dir, exist_ok=True)
-default_edge_path = Path("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
 make_edge_happy = False
 
 def count_words(line):
@@ -43,39 +42,64 @@ def process_file(file_path):
     
     return strings_array
 
-def initialize_edge(disable_user_profile):
+def initialize_edge(disable_user_profile, playwright_headless):
     # 结束现有edge进程
-    print("正在尝试结束现有edge示例...")
-    for proc in psutil.process_iter():
-        try:
-            if proc.name().lower() == "msedge.exe":
-                proc.terminate()
-                proc.wait(timeout=5)
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            continue
-    if not disable_user_profile:
-        # 构建 Edge 默认用户数据目录路径
-        print("正在构建带用户数据的调试模式edge...")
+    print("正在尝试结束现有edge实例...")
+    if os.name == 'nt':
+        for proc in psutil.process_iter():
+            try:
+                if proc.name().lower() == "msedge.exe":
+                    proc.terminate()
+                    proc.wait(timeout=5)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+    else:
+        for proc in psutil.process_iter():
+            try:
+                if proc.name().lower() in ["msedge", "microsoft edge"]:
+                    proc.terminate()
+                    proc.wait(timeout=5)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+    # 构建 Edge 默认用户数据目录路径
+    print("正在构建带用户数据的调试模式edge...")
+    if os.name == 'nt':  # Windows
         username = os.getlogin()
-        if os.name == 'nt':  # Windows
-            user_data_dir = fr"C:\Users\{username}\AppData\Local\Microsoft\Edge\User Data"
-        elif os.name == 'posix':  # macOS/Linux
-            if 'darwin' in os.uname().sysname.lower():  # macOS
-                user_data_dir = f"/Users/{username}/Library/Application Support/Microsoft Edge"
-            else:  # Linux
-                user_data_dir = f"/home/{username}/.config/microsoft-edge"
-        else:
-            raise OSError("Unsupported operating system")
+        user_data_dir = fr"C:\Users\{username}\AppData\Local\Microsoft\Edge\User Data"
+        default_edge_path = Path("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
+    elif os.name == 'posix':  # macOS/Linux
+        username = os.path.basename(os.path.expanduser("~"))
+        if 'darwin' in os.uname().sysname.lower():  # macOS
+            default_edge_path = Path("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge")
+            user_data_dir = f"/Users/{username}/Library/Application Support/Microsoft Edge"
+        else:  # Linux
+            user_data_dir = f"/home/{username}/.config/microsoft-edge"
+            default_edge_path = "/usr/bin/microsoft-edge"
+    else:
+        raise OSError("Unsupported operating system")
+    if not disable_user_profile:
         if not os.path.exists(user_data_dir):
             print(f"用户数据目录不存在: {user_data_dir}")
             user_data_dir = None
         if user_data_dir:
-            subprocess.Popen([default_edge_path, '--remote-debugging-port=9222', f'--user-data-dir={user_data_dir}'], shell = True)
+            #subprocess.Popen([shlex.quote(default_edge_path), '--remote-debugging-port=9222', f'--user-data-dir={user_data_dir}'])
+            if playwright_headless:
+                command = f'"{default_edge_path}" --remote-debugging-port=9222 --user-data-dir="{user_data_dir}" --headless'
+            else:
+                command = f'"{default_edge_path}" --remote-debugging-port=9222 --user-data-dir="{user_data_dir}"'
+            subprocess.Popen(command, shell=True)
+            print("edge已启动")
         else:
-            subprocess.Popen([default_edge_path, '--remote-debugging-port=9222'], shell = True)
+            command = f'"{default_edge_path}" --remote-debugging-port=9222'
+            subprocess.Popen(command, shell=True)
     else:
-        subprocess.Popen([default_edge_path, '--remote-debugging-port=9222', '--inprivate'], shell = True)
+        if playwright_headless:
+            command = f'"{default_edge_path}" --remote-debugging-port=9222 --user-data-dir="{user_data_dir}" --inprivate --headless'
+        else:
+            command = f'"{default_edge_path}" --remote-debugging-port=9222 --user-data-dir="{user_data_dir}" --inprivate'
+        subprocess.Popen(command, shell = True)
         print("正在拉起不带用户数据的edge")
+    return default_edge_path
 
 
 def force_select(page, source_lang, target_lang):
@@ -135,7 +159,7 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
             translated_text = output_element.inner_text()
             #print(f"原译文{translated_text}")
             
-            #edge浏览器得到的返回内容和webkit不一样
+            #edge浏览器得到的返回内容和webkit不一样，搞不懂。
             if make_edge_happy:
                 translated_lines = translated_text.splitlines()
                 processed_result = []
@@ -154,12 +178,44 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
                 #print(f"处理后译文{translated_text}")
                 translated_lines = len(translated_text.split('\n'))
             else:
+                if os.name == 'posix': # make MacOS happy
+                    translated_lines = translated_text.splitlines()
+                    processed_result = []
+                    empty_line_count = 0  
+                    for line in translated_lines:
+                        if line.strip() == "":  
+                            empty_line_count += 1
+                            if empty_line_count == 3:
+                                processed_result.append("")  # 添加一个空行
+                        else:
+                            empty_line_count = 0
+                            processed_result.append(line)  # 添加非空行
+                    
+                    # 将处理后的结果合并成字符串
+                    translated_text = "\n".join(processed_result) + "\n"
                 translated_lines = len(translated_text.split('\n'))
+                if (translated_lines+1)/2 == original_lines:
+                    translated_lines = translated_text.splitlines()
+                    processed_result = []
+                    empty_line_count = 0  
+                    for line in translated_lines:
+                        if line.strip() == "":  
+                            empty_line_count += 1
+                            if empty_line_count == 3:
+                                processed_result.append("")  # 添加一个空行
+                        else:
+                            empty_line_count = 0
+                            processed_result.append(line)  # 添加非空行
+                    
+                    # 将处理后的结果合并成字符串
+                    translated_text = "\n".join(processed_result) + "\n"
+                    translated_lines = len(translated_text.split('\n'))
+
             print(f"已翻译{translated_lines}/{original_lines}行")
             if translated_lines == original_lines:
                 return translated_text
             retry_count += 1
-            if retry_count >= 10:
+            if retry_count >= 6:
                 print("翻译行数不匹配，刷新网页重试")
                 page.reload()  # 刷新网页
                 retry_count = 0  # 重置重试计数器
@@ -189,7 +245,7 @@ def playwright_engine(
     ):
     global make_edge_happy
     if browser_login or not Path(playwright_path).exists():
-        initialize_edge(disable_user_profile)
+        default_edge_path = initialize_edge(disable_user_profile, playwright_headless)
     strings_array = process_file(input_file_path)
     output_file_path = os.path.join(output_dir, 'translated_result.txt')
     
@@ -197,8 +253,7 @@ def playwright_engine(
         # Launch the browser
         print("正在拉起浏览器")
         if Path(playwright_path).exists() and not browser_login:
-            browser_executable_path = Path(playwright_path)
-            browser = p.webkit.launch(executable_path=browser_executable_path, headless=playwright_headless)
+            browser = p.webkit.launch(executable_path=playwright_path, headless=playwright_headless)
             make_edge_happy = False
             page = browser.new_page()
         elif default_edge_path.exists():
@@ -218,5 +273,6 @@ def playwright_engine(
                 if translation:
                     print(f"写入翻译结果 {i + 1}, 正在尝试下一个资源段翻译")
                     result_file.write(translation)
+                    result_file.flush()  # 立即写入文件
         
         browser.close()
