@@ -202,7 +202,7 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
 def playwright_engine(
     source_lang, target_lang, force_lang_select, 
     browser_login, disable_user_profile, 
-    playwright_headless, playwright_path, input_file_path = 'text_extracted.txt'
+    playwright_headless, playwright_path, input_file_path = 'text_extracted.txt', mode = 'w'
     ):
     global make_edge_happy
     if browser_login or not Path(playwright_path).exists():
@@ -228,7 +228,7 @@ def playwright_engine(
         
         page.goto(f"https://www.deepl.com/translator#{source_lang}/{target_lang}/")
         
-        with open(output_file_path, 'w', encoding='utf-8') as result_file:
+        with open(output_file_path, mode, encoding='utf-8') as result_file:
             for i, s in enumerate(strings_array):
                 translation = translate_text(page, s, source_lang, target_lang, force_lang_select)
                 if translation:

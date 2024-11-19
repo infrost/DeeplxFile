@@ -161,6 +161,7 @@ def send_continue_job(source_lang, target_lang, output_text_box):
             messagebox.showinfo("警告","使用edge调用playwright会结束现有edge的所有进程\n请在执行前保存好数据！否则请取消文件导入")
         if config.get("force_lang_select", False):
             send_warning(output_text_box, "强制选择语言有时候脚本会选不上卡住，请留意提示，手动点击一下即可")
+        print("starting playwright engine...")
         playwright_process.playwright_engine(
             source_lang, target_lang, config.get("force_lang_select", False), 
             config.get("browser_login", False), config.get("disable_user_profile", False),
