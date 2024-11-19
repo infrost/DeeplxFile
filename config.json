@@ -1,16 +1,16 @@
 {
     "save_original": false,
-    "version": "0.5.9",
+    "version": "0.5.10",
     "dev": false,
     "i18n": "ZH",
     "playwright_headless": false,
     "playwright_path": "./Lib/Webkit/Playwright.exe",
-    "browser_login": false,
+    "browser_login": true,
     "force_lang_select": false,
     "translation_mode": "playwright",
-    "disable_user_profile": false,
-    "enhance_mode": true,
+    "disable_user_profile": true,
+    "enhance_mode": false,
     "deepl_token": "",
-    "deeplx_core_version": "0.9.8",
+    "deeplx_core_version": "0.9.8.3",
     "deeplx_server": ""
 }

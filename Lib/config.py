@@ -4,7 +4,7 @@ import json
 # 定义默认配置
 default_config = {
     "save_original": False, #保留原文件值
-    "version": "0.5.9",
+    "version": "0.5.10",
     "dev": False,
     "i18n": "ZH",
     "playwright_headless": False,

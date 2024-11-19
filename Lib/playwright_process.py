@@ -161,22 +161,23 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
             #print(f"原译文{translated_text}")
             print(f"已翻译{len(translated_lines)}/{original_lines}行")
             if len(translated_lines) == original_lines:
-                # 创建一个新列表用于合并翻译结果和原始输入的空行
-                processed_result = []
-                translated_index = 0  # 用于跟踪翻译文本的索引
-                for line in text.split('\n'):
-                    if line.strip() == "":  # 如果原始行是空行
-                        processed_result.append("")  # 添加一个空行
-                    else:
-                        if translated_index < len(translated_lines):
-                            processed_result.append(translated_lines[translated_index])  # 添加对应的翻译文本
-                            translated_index += 1
+                if not (translated_lines[-1] == '[...]' and translated_lines[-2] == '[...]'):
+                    # 创建一个新列表用于合并翻译结果和原始输入的空行
+                    processed_result = []
+                    translated_index = 0  # 用于跟踪翻译文本的索引
+                    for line in text.split('\n'):
+                        if line.strip() == "":  # 如果原始行是空行
+                            processed_result.append("")  # 添加一个空行
+                        else:
+                            if translated_index < len(translated_lines):
+                                processed_result.append(translated_lines[translated_index])  # 添加对应的翻译文本
+                                translated_index += 1
 
-                # 将处理后的结果合并成字符串
-                translated_text = "\n".join(processed_result) + "\n"
-                return translated_text
+                    # 将处理后的结果合并成字符串
+                    translated_text = "\n".join(processed_result) + "\n"
+                    return translated_text
             retry_count += 1
-            if retry_count >= 6:
+            if retry_count >= 4:
                 print("翻译行数不匹配，刷新网页重试")
                 page.reload()  # 刷新网页
                 retry_count = 0  # 重置重试计数器
