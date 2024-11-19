@@ -4,20 +4,19 @@ import json
 # 定义默认配置
 default_config = {
     "save_original": False, #保留原文件值
-    "version": "0.5.7",
+    "version": "0.5.9",
     "dev": False,
-    #"direct_mode": False,
-    #"playwright_mode": False,
     "i18n": "ZH",
     "playwright_headless": False,
     "playwright_path": "./Lib/Webkit/Playwright.exe", # Mac "./Lib/Webkit/pw_run.sh", windows "./Lib/Webkit/Playwright.exe"
     "browser_login": False,
     "force_lang_select": False,
-    "translation_mode": "deeplx",
+    "translation_mode": "playwright",
     "disable_user_profile": False,
     "enhance_mode": False,
     "deepl_token": "",
-    "deeplx_core_version": "0.9.8"
+    "deeplx_core_version": "0.9.8.3",
+    "deeplx_server": ""
 }
 
 # 定义配置文件的路径

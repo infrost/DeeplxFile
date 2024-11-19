@@ -161,7 +161,10 @@ def update_shared_strings_in_pptx(file_path, strings):
 
             for t_element in t_elements:
                 if string_index < len(strings):
-                    t_element.text = strings[string_index]
+                    if config.get("save_original", False): 
+                        t_element.text = (t_element.text or '') + strings[string_index]
+                    else:
+                        t_element.text = strings[string_index]
                     string_index += 1
                 else:
                     break

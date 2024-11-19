@@ -1,6 +1,6 @@
 {
     "save_original": false,
-    "version": "0.5.7",
+    "version": "0.5.9",
     "dev": false,
     "i18n": "ZH",
     "playwright_headless": false,
@@ -9,7 +9,8 @@
     "force_lang_select": false,
     "translation_mode": "playwright",
     "disable_user_profile": false,
-    "enhance_mode": false,
+    "enhance_mode": true,
     "deepl_token": "",
-    "deeplx_core_version": "0.9.8"
+    "deeplx_core_version": "0.9.8",
+    "deeplx_server": ""
 }

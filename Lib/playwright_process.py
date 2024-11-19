@@ -152,67 +152,28 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
     output_element = page.wait_for_selector('section[aria-labelledby="translation-target-heading"] div[contenteditable="true"][role="textbox"][aria-multiline="true"]')
 
     if output_element:
-        original_lines = len(text.split('\n'))+1
+        original_lines = len([line for line in text.split('\n') if line.strip()])
         retry_count = 0 
         while True:
-            time.sleep(1)  # 每秒检查一次
+            time.sleep(2)  # 每秒检查一次
             translated_text = output_element.inner_text()
+            translated_lines = [line for line in translated_text.splitlines() if line.strip()]
             #print(f"原译文{translated_text}")
-            
-            #edge浏览器得到的返回内容和webkit不一样，搞不懂。
-            if make_edge_happy:
-                translated_lines = translated_text.splitlines()
+            print(f"已翻译{len(translated_lines)}/{original_lines}行")
+            if len(translated_lines) == original_lines:
+                # 创建一个新列表用于合并翻译结果和原始输入的空行
                 processed_result = []
-                empty_line_count = 0  
-                for line in translated_lines:
-                    if line.strip() == "":  
-                        empty_line_count += 1
-                        if empty_line_count == 3:
-                            processed_result.append("")  # 添加一个空行
+                translated_index = 0  # 用于跟踪翻译文本的索引
+                for line in text.split('\n'):
+                    if line.strip() == "":  # 如果原始行是空行
+                        processed_result.append("")  # 添加一个空行
                     else:
-                        empty_line_count = 0
-                        processed_result.append(line)  # 添加非空行
-                
+                        if translated_index < len(translated_lines):
+                            processed_result.append(translated_lines[translated_index])  # 添加对应的翻译文本
+                            translated_index += 1
+
                 # 将处理后的结果合并成字符串
                 translated_text = "\n".join(processed_result) + "\n"
-                #print(f"处理后译文{translated_text}")
-                translated_lines = len(translated_text.split('\n'))
-            else:
-                if os.name == 'posix': # make MacOS happy
-                    translated_lines = translated_text.splitlines()
-                    processed_result = []
-                    empty_line_count = 0  
-                    for line in translated_lines:
-                        if line.strip() == "":  
-                            empty_line_count += 1
-                            if empty_line_count == 3:
-                                processed_result.append("")  # 添加一个空行
-                        else:
-                            empty_line_count = 0
-                            processed_result.append(line)  # 添加非空行
-                    
-                    # 将处理后的结果合并成字符串
-                    translated_text = "\n".join(processed_result) + "\n"
-                translated_lines = len(translated_text.split('\n'))
-                if (translated_lines+1)/2 == original_lines:
-                    translated_lines = translated_text.splitlines()
-                    processed_result = []
-                    empty_line_count = 0  
-                    for line in translated_lines:
-                        if line.strip() == "":  
-                            empty_line_count += 1
-                            if empty_line_count == 3:
-                                processed_result.append("")  # 添加一个空行
-                        else:
-                            empty_line_count = 0
-                            processed_result.append(line)  # 添加非空行
-                    
-                    # 将处理后的结果合并成字符串
-                    translated_text = "\n".join(processed_result) + "\n"
-                    translated_lines = len(translated_text.split('\n'))
-
-            print(f"已翻译{translated_lines}/{original_lines}行")
-            if translated_lines == original_lines:
                 return translated_text
             retry_count += 1
             if retry_count >= 6:

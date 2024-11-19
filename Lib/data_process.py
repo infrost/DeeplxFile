@@ -10,13 +10,20 @@ def count_words(line):
     # 统计一行中的词数，以空格分隔
     return len(line.split())
 
-def process_file(file_path, source_lang, target_lang, deepl_token):
+def process_file(file_path, source_lang, target_lang, deepl_token, mode = 'w'):
     if deepl_token:
         print("deeplx方法：Pro模式，将会消耗token")
-        deeplx_api = "http://127.0.0.1:1188/v1/translate?token=deepl_token"
+        if config.get("deeplx_server"):
+            deeplx_api = f"http://{deeplx_server}/v1/translate?token=deepl_token"
+        else:
+            deeplx_api = "http://127.0.0.1:1188/v1/translate?token=deepl_token"
     else:
         print("deeplx方法：免费模式")
-        deeplx_api = "http://127.0.0.1:1188/translate"
+        if config.get("deeplx_server"):
+            deeplx_api = f"http://{deeplx_server}/translate"
+        else:
+            deeplx_api = "http://127.0.0.1:1188/translate"
+
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
     
@@ -42,7 +49,7 @@ def process_file(file_path, source_lang, target_lang, deepl_token):
     if current_string:
         strings_array.append('\n'.join(current_string))
     alternative_index = 0  # 用于命名 alternatives 文件
-    with open('./out/translated_result.txt', 'w', encoding='utf-8') as result_file:
+    with open('./out/translated_result.txt', mode, encoding='utf-8') as result_file:
         process_block_count = 1
         for s in strings_array:
             print(f"正在处理第{process_block_count}个块...")
@@ -54,7 +61,8 @@ def process_file(file_path, source_lang, target_lang, deepl_token):
                 "target_lang": target_lang
             }
             post_data = json.dumps(data)
-
+            print(post_data)
+            input()
             retry_count = 0
             max_retries = 1
             success = False
@@ -75,14 +83,14 @@ def process_file(file_path, source_lang, target_lang, deepl_token):
                         result_file.write(response_data['data'] + '\n')
                         result_file.flush()
                         success = True
-                        #print(f"收到数据 {response_data}")
+                        print(f"收到数据 {response_data}")
 
                         # 如果存在 alternatives，保存每个替代到不同的文件
                         if "alternatives" in response_data and response_data["alternatives"] is not None:
                             alternatives = response_data["alternatives"]
-                            print(alternatives)
+                            #print(alternatives)
                             for alternative in alternatives:
-                                with open(f'./out/alternatives({alternative_index}).txt', 'w', encoding='utf-8') as alt_file:
+                                with open(f'./out/alternatives({alternative_index}).txt', mode, encoding='utf-8') as alt_file:
                                     alt_file.write(alternative + '\n')
                                 alternative_index += 1
                         break  # 成功处理后退出重试循环
