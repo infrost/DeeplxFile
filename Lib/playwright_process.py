@@ -42,6 +42,20 @@ def process_file(file_path):
     
     return strings_array
 
+def split_text_on_line_boundary(text, midpoint):
+    # 向前查找换行符
+    split_point = text.rfind('\n', 0, midpoint)
+    if split_point == -1:  # 如果未找到换行符
+        # 向后查找换行符
+        split_point = text.find('\n', midpoint)
+        if split_point == -1:  # 如果仍未找到换行符
+            split_point = midpoint  # 直接使用原始midpoint
+
+    # 根据找到的分割点拆分文本，并保留换行符
+    part1 = text[:split_point + 1]  # 包含换行符
+    part2 = text[split_point + 1:]  # 从换行符之后开始
+    return part1, part2
+
 def initialize_edge(disable_user_profile, playwright_headless):
     # 结束现有edge进程
     print("正在尝试结束现有edge实例...")
@@ -183,16 +197,13 @@ def translate_text(page, text, source_lang, target_lang, force_lang_select):
                 if char_limit_element:
                     print("检测到字符限制，正在拆分输入文本...")
                     # 拆分文本并分别翻译
-                    midpoint = len(text) // 2
-                    part1 = text[:midpoint]
-                    part2 = text[midpoint:]
-
+                    part1, part2 = split_text_on_line_boundary(text, len(text) // 2)
                     translated_part1 = translate_text(page, part1, source_lang, target_lang, force_lang_select)
                     translated_part2 = translate_text(page, part2, source_lang, target_lang, force_lang_select)
 
                     if translated_part1 is not None and translated_part2 is not None:
                         # 合并翻译结果
-                        return translated_part1.strip() + "\n" + translated_part2.strip()
+                        return translated_part1.strip() + "\n" + translated_part2.strip() + "\n"
                     else:
                         print("部分翻译失败，无法合并结果")
                         return None
