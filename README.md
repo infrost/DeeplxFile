@@ -8,7 +8,7 @@
 ------------------
 点击[这里下载](https://github.com/infrost/DeeplxFile/releases)
 
-在[这里查看详细介绍](https://blog.infrost.site/2024/08/29/DeeplxFile/)
+**重要！** 如果使用中遇到疑问或错误，请先查看[置顶的issue](https://github.com/infrost/DeeplxFile/issues)
 
 ## 功能介绍
 ### 这个软件有什么优点？
