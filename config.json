@@ -1,6 +1,6 @@
 {
     "save_original": false,
-    "version": "0.5.10",
+    "version": "0.5.10rc2",
     "dev": false,
     "i18n": "ZH",
     "playwright_headless": false,
