@@ -5,6 +5,7 @@
 |
 [English](/README_translated.md)
 
+[![Downloads](https://img.shields.io/github/downloads/infrost/deeplxfile/total.svg)](https://github.com/infrost/DeeplxFile/releases)
 ------------------
 点击[这里下载](https://github.com/infrost/DeeplxFile/releases)
 
