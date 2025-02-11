@@ -1,16 +1,21 @@
 {
     "save_original": false,
-    "version": "0.5.10rc2",
+    "version": "0.5.11",
     "dev": false,
     "i18n": "ZH",
     "playwright_headless": false,
     "playwright_path": "./Lib/Webkit/Playwright.exe",
-    "browser_login": true,
+    "browser_login": false,
     "force_lang_select": false,
-    "translation_mode": "playwright",
-    "disable_user_profile": true,
+    "translation_mode": "deeplx",
+    "disable_user_profile": false,
     "enhance_mode": false,
     "deepl_token": "",
-    "deeplx_core_version": "0.9.8.3",
-    "deeplx_server": ""
+    "deeplx_core_version": "1.0.4",
+    "deeplx_server": "",
+    "llm_api_base": "https://api.openai.com/v1",
+    "llm_api_key": "",
+    "llm_model": "gpt-4o",
+    "llm_prompt": "",
+    "llm_max_token": "4096"
 }
