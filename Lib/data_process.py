@@ -58,11 +58,8 @@ def process_file(file_path, source_lang, target_lang, deepl_token, mode = 'w'):
             print(f"正在处理第{process_block_count}个块...")
             process_block_count = process_block_count + 1
             #json_array = str(s)
-
-            # 将换行符替换为 <br> 标签, 由于0.9.8.3deeplx的bug
-            modified_string = s.replace('\n', '<br>')
             data = {
-                "text": modified_string,
+                "text": s,
                 "source_lang": source_lang,
                 "target_lang": target_lang
             }
@@ -86,7 +83,7 @@ def process_file(file_path, source_lang, target_lang, deepl_token, mode = 'w'):
                     # 检查 'data' 是否存在
                     if 'data' in response_data:
                         # 将返回的数据中的 <br> 标签替换回换行符
-                        translated_text = response_data['data'].replace('\u003cbr\u003e', '\n')
+                        translated_text = response_data['data']
                         # 保存 data 内容到 translated_result.txt
                         result_file.write(translated_text + '\n')
                         result_file.flush()
@@ -94,9 +91,9 @@ def process_file(file_path, source_lang, target_lang, deepl_token, mode = 'w'):
                         #print(f"收到数据\n {translated_text}")
 
                         # 如果存在 alternatives，保存每个替代到不同的文件
-                        #if "alternatives" in response_data and response_data["alternatives"] is not None:
-                        if False: #暂时不执行这个
-                            alternatives = response_data["alternatives"].replace('\u003cbr\u003e', '\n')
+                        if "alternatives" in response_data and response_data["alternatives"] is not None:
+                        #if False: #暂时不执行这个
+                            alternatives = response_data["alternatives"]
                             #print(alternatives)
                             for alternative in alternatives:
                                 with open(f'./out/alternatives({alternative_index}).txt', mode, encoding='utf-8') as alt_file:

@@ -4,7 +4,7 @@ import json
 # 定义默认配置
 default_config = {
     "save_original": False, #保留原文件值
-    "version": "0.5.10rc2",
+    "version": "0.5.11",
     "dev": False,
     "i18n": "ZH",
     "playwright_headless": False,
@@ -15,8 +15,13 @@ default_config = {
     "disable_user_profile": False,
     "enhance_mode": False,
     "deepl_token": "",
-    "deeplx_core_version": "0.9.8.3",
-    "deeplx_server": ""
+    "deeplx_core_version": "1.0.4",
+    "deeplx_server": "",
+    "llm_api_base": "https://api.openai.com/v1",
+    "llm_api_key": "",
+    "llm_model": "gpt-4o",
+    "llm_prompt": "",
+    "llm_max_token":"4096"
 }
 
 # 定义配置文件的路径

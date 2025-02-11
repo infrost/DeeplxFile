@@ -7,7 +7,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from tkinter import Tk, Text, Entry, StringVar, BooleanVar, Label, OptionMenu, Button, Checkbutton, Frame, messagebox, DISABLED, NORMAL, Radiobutton
 from tkinter.ttk import Notebook, Separator, Style
-from Lib import compose, data_process, extract, direct_mode, playwright_process, continue_trans
+from Lib import compose, data_process, extract, direct_mode, playwright_process, continue_trans, llm_translate
 from Lib.output import start_redirect, send_warning, success_message
 from Lib.config import config, save_config
 
@@ -58,6 +58,9 @@ def send_process_job(source_lang, target_lang, output_text_box):
             config.get("browser_login", False), config.get("disable_user_profile", False),
             config.get("playwright_headless", False), config.get("playwright_path", "./Lib/Webkit/Playwright.exe"), './tmp/text_extracted.txt'
         )
+    elif config.get("translation_mode") == "llm":
+        print("正在请求大模型翻译")
+        llm_translate.llm_process('./tmp/text_extracted.txt', source_lang, target_lang, config.get("llm_api_base", "https://api.openai.com/v1"), config.get("llm_api_key", ""), config.get("llm_model", "gpt-4-turbo"), config.get("llm_max_token", 4096), config.get("llm_prompt", ""), mode = 'w', retries = 3, delay = 5)
     else:
         data_process.process_file('./tmp/text_extracted.txt', source_lang, target_lang, config.get("deepl_token", ""))
     
@@ -77,6 +80,10 @@ def process_translation():
             messagebox.showinfo("警告","使用edge调用playwright会结束现有edge的所有进程\n请在执行前保存好数据！否则请取消文件导入")
         if config.get("force_lang_select", False):
             send_warning(output_text_box, "强制选择语言有时候脚本会选不上卡住，请留意提示，手动点击一下即可")
+    elif config.get("translation_mode") == "llm":
+        print("\n启用大模型模式（测试模式）")
+        if config.get("llm_prompt") and config.get("llm_prompt") is not None:
+            send_warning(output_text_box, f"自定义翻译要求:{config.get('llm_prompt')}")
     else:
         try:
             if processes:
@@ -227,6 +234,7 @@ def start_check():
 
 def save_and_exit():
     global warn_label
+    global playwright_label
     #config['direct_mode'] = direct_mode_var.get()
     #config['playwright_mode'] = playwright_mode_var.get()
     config['browser_login'] = browser_login_var.get()
@@ -239,13 +247,27 @@ def save_and_exit():
     config['enhance_mode'] = enhance_mode_var.get()
     config['deepl_token'] = deepl_token_var.get()
     config['deeplx_server'] = deeplx_server_var.get()
+    config['llm_api_base'] = llm_api_base_var.get()
+    config['llm_api_key'] = llm_api_key_var.get()
+    config['llm_model'] = llm_model_var.get()
+    config['llm_max_token'] = llm_max_token_var.get()
+    config['llm_prompt'] = llm_prompt_var.get()
     save_config(config)
     if config.get("translation_mode") == "playwright":
+        if "playwright_label" in globals() and playwright_label is not None:
+            playwright_label.destroy()  # 移除旧的Label
+        playwright_label = None
+    elif not "playwright_label" in globals() or playwright_label is None:
+        playwright_label = Label(settings_frame, text="若要使用本页设置中的功能，请在翻译设置中选择`playwright模式`", fg="red")
+        playwright_label.pack(pady=10)
+
+
+    if config.get("translation_mode") == "llm":
         if "warn_label" in globals() and warn_label is not None:
             warn_label.destroy()  # 移除旧的Label
         warn_label = None
     elif not "warn_label" in globals() or warn_label is None:
-        warn_label = Label(settings_frame, text="若要使用本页设置中的功能，请在翻译设置中选择`playwright模式`", fg="red")
+        warn_label = Label(llm_frame, text="若要使用本页设置中的功能，请在翻译设置中选择`大模型`", fg="red")
         warn_label.pack(pady=10)
 
     messagebox.showinfo("成功","设置已保存")
@@ -276,7 +298,7 @@ root = Tk()
 root.title("DeeplxFile 翻译工具")
 if os.name == 'nt':
     icon_path = "./Lib/deeplxfile.ico" 
-    root.geometry("500x500") 
+    root.geometry("500x520") 
 else:
     icon_path = "./Lib/deeplxfile.icns"
     root.geometry("570x550")
@@ -362,6 +384,7 @@ mode_config_label.pack()
 translation_mode_var = StringVar(radio_frame)
 translation_mode_var.set(config.get("translation_mode", "")) 
 Radiobutton(radio_frame, text="直连模式", variable=translation_mode_var, value="direct").pack(anchor='w')
+Radiobutton(radio_frame, text="大模型 (测试阶段，支持翻译要求)", variable=translation_mode_var, value="llm").pack(anchor='w')
 Radiobutton(radio_frame, text="Playwright (兼容性好，默认)", variable=translation_mode_var, value="playwright").pack(anchor='w')
 Radiobutton(radio_frame, text="Deeplx (速度快，小文件可用)", variable=translation_mode_var, value="deeplx").pack(anchor='w')
 deepl_token_var = StringVar(radio_frame)
@@ -460,7 +483,62 @@ save_button = Button(settings_frame, text="保存设置", command=save_and_exit)
 save_button.pack(pady=(0, 10))
 
 if config.get("translation_mode") != "playwright":
-    warn_label = Label(settings_frame, text="若要使用本页设置中的功能，请在翻译设置中选择`playwright模式`", fg="red")
+    playwright_label = Label(settings_frame, text="若要使用本页设置中的功能，请在翻译设置中选择`playwright模式`", fg="red")
+    playwright_label.pack(pady=10)
+
+
+"""
+
+大模型翻译
+
+"""
+
+llm_frame = Frame(notebook)
+notebook.add(llm_frame, text="大模型翻译(测试)")
+
+llm_api_base_var = StringVar(llm_frame)
+llm_api_base_var.set(config.get("llm_api_base", "")) 
+llm_api_base_var_label = Label(llm_frame, text="\n大模型API地址:")
+llm_api_base_var_label.pack(anchor='w')
+llm_api_base_var_entry = Entry(llm_frame, textvariable=llm_api_base_var, width=35)
+llm_api_base_var_entry.pack(anchor='w', padx=5)
+
+llm_api_key_var = StringVar(llm_frame)
+llm_api_key_var.set(config.get("llm_api_key", ""))
+llm_api_key_var_label = Label(llm_frame, text="\n大模型API密钥:")
+llm_api_key_var_label.pack(anchor='w')
+llm_api_key_var_entry = Entry(llm_frame, textvariable=llm_api_key_var, width=35)
+llm_api_key_var_entry.pack(anchor='w', padx=5)
+
+llm_model_var = StringVar(llm_frame)
+llm_model_var.set(config.get("llm_model", ""))
+llm_model_var_label = Label(llm_frame, text="\n大模型名称:")
+llm_model_var_label.pack(anchor='w')
+llm_model_var_entry = Entry(llm_frame, textvariable=llm_model_var, width=35)
+llm_model_var_entry.pack(anchor='w', padx=5)
+
+llm_max_token_var = StringVar(llm_frame)
+llm_max_token_var.set(config.get("llm_max_token", ""))
+llm_max_token_var_label = Label(llm_frame, text="\n单次翻译长度限制（4096大约消耗1500token）:")
+llm_max_token_var_label.pack(anchor='w')
+llm_max_token_var_entry = Entry(llm_frame, textvariable=llm_max_token_var, width=35)
+llm_max_token_var_entry.pack(anchor='w', padx=5)
+
+llm_prompt_var = StringVar(llm_frame)
+llm_prompt_var.set(config.get("llm_prompt", ""))
+llm_prompt_var_label = Label(llm_frame, text="自定义翻译要求\n(如：“这是一封商务信函，请使用庄严体翻译”等，可留空):")
+llm_prompt_var_label.pack(anchor='w')
+llm_prompt_var_entry = Entry(llm_frame, textvariable=llm_prompt_var, width=50)
+llm_prompt_var_entry.pack(anchor='w', padx=5)
+
+save_button = Button(llm_frame, text="保存设置", command=save_and_exit)
+save_button.pack(pady=(0, 10))
+
+info_label = Label(llm_frame, text="大模型翻译是测试功能，可能会有不稳定的情况\n目前只支持openai/openai like的API\n大模型速度取决于所选模型，请耐心等待", fg="blue")
+info_label.pack(pady=10)
+
+if config.get("translation_mode") != "llm":
+    warn_label = Label(llm_frame, text="若要使用本页设置中的功能，请在翻译设置中选择`大模型`", fg="red")
     warn_label.pack(pady=10)
 
 """
